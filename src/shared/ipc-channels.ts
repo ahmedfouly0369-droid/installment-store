@@ -85,6 +85,13 @@ export const IPC = {
     LIST: 'treasury:list',
     ADD: 'treasury:add',
     BALANCE: 'treasury:balance'
+  },
+  EXPENSES: {
+    LIST: 'expenses:list',
+    CREATE: 'expenses:create',
+    UPDATE: 'expenses:update',
+    DELETE: 'expenses:delete',
+    SUMMARY: 'expenses:summary'
   }
 } as const
 

@@ -258,6 +258,35 @@ export interface TreasuryEntry {
   created_at: string
 }
 
+export type ExpenseCategory = 'salary' | 'operating' | 'freight' | 'return' | 'damaged' | 'other'
+
+export interface Expense {
+  id: number
+  category: ExpenseCategory
+  employee_name: string | null
+  amount: number
+  expense_date: string
+  description: string
+  notes: string | null
+  created_by: number
+  created_at: string
+  created_by_name?: string
+}
+
+export interface ExpenseInput {
+  category: ExpenseCategory
+  employee_name?: string | null
+  amount: number
+  expense_date: string
+  description: string
+  notes?: string | null
+}
+
+export interface ExpenseSummary {
+  total: number
+  by_category: Record<ExpenseCategory, number>
+}
+
 export interface DashboardSummary {
   total_sales_value: number
   total_inventory_value: number
@@ -271,6 +300,8 @@ export interface DashboardSummary {
   customers_count: number
   active_sales_count: number
   overdue_installments_count: number
+  total_expenses?: number
+  net_profit?: number
 }
 
 export interface SalesTrendPoint {

@@ -54,9 +54,36 @@
     "sales": "المبيعات",
     "installments": "الأقساط",
     "treasury": "الخزينة",
+    "expenses": "المصروفات",
     "reports": "التقارير",
     "users": "المستخدمين",
     "notifications": "الإشعارات"
+  },
+  "theme": {
+    "light": "وضع فاتح",
+    "dark": "وضع داكن"
+  },
+  "actions": {
+    "print": "طباعة",
+    "print_invoice": "طباعة الفاتورة",
+    "print_inventory": "طباعة محتويات المخازن",
+    "print_report": "طباعة التقرير"
+  },
+  "expenses": {
+    "title": "المصروفات",
+    "add": "إضافة مصروف",
+    "edit": "تعديل المصروف",
+    "category": "نوع المصروف",
+    "description": "البيان",
+    "employee_name": "اسم الموظف",
+    "categories": {
+      "salary": "رواتب الموظفين",
+      "operating": "مصاريف تشغيل",
+      "freight": "نولون / شحن",
+      "return": "مرتجعات",
+      "damaged": "تالف",
+      "other": "أخرى"
+    }
   },
   "dashboard": {
     "title": "لوحة التحكم",
@@ -64,6 +91,8 @@
     "inventory_value": "قيمة المخزون",
     "treasury_balance": "رصيد الخزينة",
     "profit": "الربح الإجمالي",
+    "expenses": "إجمالي المصروفات",
+    "net_profit": "صافي الربح",
     "bad_debt": "الديون المعدومة",
     "outstanding": "الأقساط المستحقة",
     "overdue": "الأقساط المتأخرة",
@@ -75,6 +104,37 @@
     "sales_trend": "اتجاه المبيعات والتحصيل (آخر 6 شهور)",
     "upcoming_due": "أقساط قادمة (7 أيام)",
     "overdue_alerts": "تنبيهات العملاء المتأخرين"
+  },
+  "invoice": {
+    "title": "فاتورة بيع",
+    "invoice_no": "رقم الفاتورة",
+    "date": "تاريخ الفاتورة",
+    "customer": "اسم العميل",
+    "national_id": "الرقم القومي",
+    "phone": "رقم الجوال",
+    "address": "العنوان",
+    "items": "البنود",
+    "schedule": "جدول الأقساط",
+    "subtotal": "الإجمالي",
+    "down_payment": "الدفعة المقدمة",
+    "remaining": "المتبقي",
+    "installments_count": "عدد الأقساط",
+    "installment_amount": "قيمة القسط",
+    "company_signature": "توقيع البائع",
+    "customer_signature": "توقيع العميل",
+    "thanks": "شكراً لتعاملكم معنا"
+  },
+  "print_inventory": {
+    "title": "تقرير محتويات المخازن",
+    "filter_warehouse": "المخزن",
+    "filter_condition": "الحالة",
+    "filter_all": "الكل",
+    "generated_at": "تاريخ الطباعة"
+  },
+  "print_report": {
+    "title": "تقرير الأرباح والخسائر",
+    "period": "الفترة",
+    "generated_at": "تاريخ الطباعة"
   },
   "categories": {
     "title": "الأصناف والبراندات",

@@ -9,6 +9,7 @@ import * as customers from '../services/customers'
 import * as sales from '../services/sales'
 import * as reports from '../services/reports'
 import * as treasury from '../services/treasury'
+import * as expenses from '../services/expenses'
 
 type Handler = (...args: unknown[]) => unknown
 
@@ -295,6 +296,28 @@ export function registerIpc(): void {
     return treasury.addTreasuryEntry(token, data)
   })
   on(IPC.TREASURY.BALANCE, (...args) => treasury.getTreasuryBalance((args as [string])[0]))
+
+  on(IPC.EXPENSES.LIST, (...args) => {
+    const [token, filters] = args as [string, Parameters<typeof expenses.listExpenses>[1]]
+    return expenses.listExpenses(token, filters)
+  })
+  on(IPC.EXPENSES.CREATE, (...args) => {
+    const [token, data] = args as [string, Parameters<typeof expenses.createExpense>[1]]
+    return expenses.createExpense(token, data)
+  })
+  on(IPC.EXPENSES.UPDATE, (...args) => {
+    const [token, id, data] = args as [string, number, Parameters<typeof expenses.updateExpense>[2]]
+    return expenses.updateExpense(token, id, data)
+  })
+  on(IPC.EXPENSES.DELETE, (...args) => {
+    const [token, id] = args as [string, number]
+    expenses.deleteExpense(token, id)
+    return true
+  })
+  on(IPC.EXPENSES.SUMMARY, (...args) => {
+    const [token, filters] = args as [string, Parameters<typeof expenses.getExpensesSummary>[1]]
+    return expenses.getExpensesSummary(token, filters)
+  })
 }
 
 // suppress unused

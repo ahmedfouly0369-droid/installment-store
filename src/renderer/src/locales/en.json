@@ -54,16 +54,45 @@
     "sales": "Sales",
     "installments": "Installments",
     "treasury": "Treasury",
+    "expenses": "Expenses",
     "reports": "Reports",
     "users": "Users",
     "notifications": "Notifications"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "actions": {
+    "print": "Print",
+    "print_invoice": "Print Invoice",
+    "print_inventory": "Print Inventory",
+    "print_report": "Print Report"
+  },
+  "expenses": {
+    "title": "Expenses",
+    "add": "Add Expense",
+    "edit": "Edit Expense",
+    "category": "Category",
+    "description": "Description",
+    "employee_name": "Employee Name",
+    "categories": {
+      "salary": "Salaries",
+      "operating": "Operating",
+      "freight": "Freight / Shipping",
+      "return": "Returns",
+      "damaged": "Damaged Goods",
+      "other": "Other"
+    }
   },
   "dashboard": {
     "title": "Dashboard",
     "total_sales": "Total Sales",
     "inventory_value": "Inventory Value",
     "treasury_balance": "Treasury Balance",
-    "profit": "Total Profit",
+    "profit": "Gross Profit",
+    "expenses": "Total Expenses",
+    "net_profit": "Net Profit",
     "bad_debt": "Bad Debts",
     "outstanding": "Outstanding Installments",
     "overdue": "Overdue Installments",
@@ -75,6 +104,37 @@
     "sales_trend": "Sales & Collections Trend (last 6 months)",
     "upcoming_due": "Upcoming Due (7 days)",
     "overdue_alerts": "Overdue Customer Alerts"
+  },
+  "invoice": {
+    "title": "Sales Invoice",
+    "invoice_no": "Invoice #",
+    "date": "Invoice Date",
+    "customer": "Customer",
+    "national_id": "National ID",
+    "phone": "Phone",
+    "address": "Address",
+    "items": "Items",
+    "schedule": "Installment Schedule",
+    "subtotal": "Subtotal",
+    "down_payment": "Down Payment",
+    "remaining": "Remaining",
+    "installments_count": "Installments Count",
+    "installment_amount": "Installment Amount",
+    "company_signature": "Seller Signature",
+    "customer_signature": "Customer Signature",
+    "thanks": "Thank you for your business"
+  },
+  "print_inventory": {
+    "title": "Warehouse Inventory Report",
+    "filter_warehouse": "Warehouse",
+    "filter_condition": "Condition",
+    "filter_all": "All",
+    "generated_at": "Generated"
+  },
+  "print_report": {
+    "title": "Profit & Loss Report",
+    "period": "Period",
+    "generated_at": "Generated"
   },
   "categories": {
     "title": "Categories & Brands",

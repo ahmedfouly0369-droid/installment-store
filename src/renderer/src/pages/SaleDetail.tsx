@@ -2,14 +2,15 @@ import { FormEvent, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, ArrowRight, Ban, ShieldOff, Wallet } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Ban, Printer, ShieldOff, Wallet } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { call } from '../lib/api'
 import { Modal } from '../components/ui/Modal'
 import { Field } from '../components/ui/Field'
 import { formatCurrency, formatDate, todayIso } from '../lib/utils'
 import { useAuthStore } from '../store/auth'
-import type { Installment, Payment, Sale, SaleItem } from '@shared/types'
+import { escapeHtml, openPrintWindow } from '../lib/print'
+import type { Customer, Installment, Payment, Sale, SaleItem } from '@shared/types'
 
 interface SaleDetailData {
   sale: Sale
@@ -88,6 +89,117 @@ export function SaleDetail() {
     }
   }
 
+  const onPrintInvoice = async () => {
+    if (!data.data) return
+    let customer: Customer | null = null
+    try {
+      customer = await call<Customer>('customers:get', data.data.sale.customer_id)
+    } catch {
+      // optional
+    }
+    const sale = data.data.sale
+    const items = data.data.items
+    const installments = data.data.installments
+
+    const itemsRows = items
+      .map(
+        it => `<tr>
+          <td>${escapeHtml(isAr ? it.product_name_ar : it.product_name_en)}</td>
+          <td>${it.quantity}</td>
+          <td>${formatCurrency(it.unit_price, locale)}</td>
+          <td>${formatCurrency(it.total_price, locale)}</td>
+        </tr>`
+      )
+      .join('')
+
+    const schedRows = installments
+      .map(
+        i => `<tr>
+          <td>${i.installment_number}</td>
+          <td>${formatDate(i.due_date, locale)}</td>
+          <td>${formatCurrency(i.amount, locale)}</td>
+          <td>${formatCurrency(i.paid_amount, locale)}</td>
+          <td><span class="badge">${escapeHtml(t(`sales.installment_statuses.${i.status}`))}</span></td>
+        </tr>`
+      )
+      .join('')
+
+    const html = `
+      <div class="header">
+        <div>
+          <h1>${escapeHtml(t('app.name'))}</h1>
+          <div class="meta">${escapeHtml(t('app.subtitle'))}</div>
+        </div>
+        <div class="meta" style="text-align:${isAr ? 'left' : 'right'};">
+          <div><strong>${escapeHtml(t('invoice.invoice_no'))}:</strong> ${escapeHtml(sale.invoice_number)}</div>
+          <div><strong>${escapeHtml(t('invoice.date'))}:</strong> ${formatDate(sale.start_date, locale)}</div>
+          <div><strong>${escapeHtml(t('sales.type'))}:</strong> ${escapeHtml(t(`sales.types.${sale.type}`))}</div>
+        </div>
+      </div>
+
+      <h2>${escapeHtml(t('invoice.title'))}</h2>
+
+      <div class="grid grid-2">
+        <div class="info-box">
+          <h3>${escapeHtml(t('invoice.customer'))}</h3>
+          <div class="value">${escapeHtml(customer?.full_name ?? sale.customer_name ?? '')}</div>
+          ${customer?.national_id ? `<div class="meta">${escapeHtml(t('invoice.national_id'))}: ${escapeHtml(customer.national_id)}</div>` : ''}
+          ${customer?.phone ? `<div class="meta">${escapeHtml(t('invoice.phone'))}: ${escapeHtml(customer.phone)}</div>` : ''}
+          ${customer?.address ? `<div class="meta">${escapeHtml(t('invoice.address'))}: ${escapeHtml(customer.address)}</div>` : ''}
+        </div>
+        <div class="info-box">
+          <h3>${escapeHtml(t('invoice.subtotal'))}</h3>
+          <table>
+            <tr><td class="label">${escapeHtml(t('invoice.subtotal'))}</td><td class="value">${formatCurrency(sale.total_amount, locale)}</td></tr>
+            <tr><td class="label">${escapeHtml(t('invoice.down_payment'))}</td><td class="value">${formatCurrency(sale.down_payment, locale)}</td></tr>
+            <tr><td class="label">${escapeHtml(t('invoice.remaining'))}</td><td class="value">${formatCurrency(sale.remaining_amount, locale)}</td></tr>
+            ${sale.type === 'installment' ? `<tr><td class="label">${escapeHtml(t('invoice.installments_count'))}</td><td class="value">${sale.installments_count}</td></tr>` : ''}
+            ${sale.type === 'installment' ? `<tr><td class="label">${escapeHtml(t('invoice.installment_amount'))}</td><td class="value">${formatCurrency(sale.installment_amount, locale)}</td></tr>` : ''}
+          </table>
+        </div>
+      </div>
+
+      <h2>${escapeHtml(t('invoice.items'))}</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>${escapeHtml(t('sales.product'))}</th>
+            <th>${escapeHtml(t('sales.quantity'))}</th>
+            <th>${escapeHtml(t('sales.unit_price'))}</th>
+            <th>${escapeHtml(t('sales.total_price'))}</th>
+          </tr>
+        </thead>
+        <tbody>${itemsRows}</tbody>
+      </table>
+
+      ${
+        sale.type === 'installment' && installments.length
+          ? `<h2>${escapeHtml(t('invoice.schedule'))}</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>${escapeHtml(t('sales.installment_no'))}</th>
+              <th>${escapeHtml(t('sales.due_date'))}</th>
+              <th>${escapeHtml(t('common.amount'))}</th>
+              <th>${escapeHtml(t('suppliers.total_paid'))}</th>
+              <th>${escapeHtml(t('common.status'))}</th>
+            </tr>
+          </thead>
+          <tbody>${schedRows}</tbody>
+        </table>`
+          : ''
+      }
+
+      <div class="footer">
+        <div class="signature">${escapeHtml(t('invoice.company_signature'))}</div>
+        <div class="signature">${escapeHtml(t('invoice.customer_signature'))}</div>
+      </div>
+      <div class="thanks">${escapeHtml(t('invoice.thanks'))}</div>
+    `
+
+    openPrintWindow(html, `${t('invoice.title')} - ${sale.invoice_number}`, isAr ? 'rtl' : 'ltr')
+  }
+
   const ArrowIcon = isAr ? ArrowRight : ArrowLeft
   const sale = data.data?.sale
   const items = data.data?.items ?? []
@@ -120,11 +232,18 @@ export function SaleDetail() {
             )}
           </h1>
         </div>
-        {sale && sale.status !== 'cancelled' && isAdmin && (
-          <button className="btn-danger" onClick={onCancel}>
-            <Ban size={16} /> {t('sales.cancel_sale')}
-          </button>
-        )}
+        <div className="flex gap-2">
+          {sale && (
+            <button className="btn-secondary" onClick={onPrintInvoice}>
+              <Printer size={16} /> {t('actions.print_invoice')}
+            </button>
+          )}
+          {sale && sale.status !== 'cancelled' && isAdmin && (
+            <button className="btn-danger" onClick={onCancel}>
+              <Ban size={16} /> {t('sales.cancel_sale')}
+            </button>
+          )}
+        </div>
       </div>
 
       {sale && (
