@@ -319,3 +319,48 @@ export interface OverdueAlert {
   overdue_count: number
   oldest_due_date: string
 }
+
+export type BackupType = 'manual' | 'daily' | 'weekly' | 'monthly'
+export type BackupStatus = 'success' | 'failed'
+
+export interface BackupSettings {
+  id: number
+  enabled: number
+  backup_path: string | null
+  daily_interval_hours: number
+  weekly_enabled: number
+  monthly_enabled: number
+  daily_retention: number
+  weekly_retention: number
+  monthly_retention: number
+  last_daily_at: string | null
+  last_weekly_at: string | null
+  last_monthly_at: string | null
+  updated_at: string
+}
+
+export interface BackupSettingsInput {
+  enabled: boolean
+  backup_path: string | null
+  daily_interval_hours: number
+  weekly_enabled: boolean
+  monthly_enabled: boolean
+  daily_retention: number
+  weekly_retention: number
+  monthly_retention: number
+}
+
+export interface BackupLogEntry {
+  id: number
+  type: BackupType
+  filename: string
+  file_path: string
+  size_bytes: number | null
+  status: BackupStatus
+  error: string | null
+  created_at: string
+}
+
+export interface BackupResult {
+  log: BackupLogEntry
+}

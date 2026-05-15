@@ -246,6 +246,35 @@ CREATE TABLE IF NOT EXISTS expenses (
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT
 );
 
+CREATE TABLE IF NOT EXISTS backup_settings (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  enabled INTEGER NOT NULL DEFAULT 1,
+  backup_path TEXT,
+  daily_interval_hours INTEGER NOT NULL DEFAULT 24,
+  weekly_enabled INTEGER NOT NULL DEFAULT 1,
+  monthly_enabled INTEGER NOT NULL DEFAULT 1,
+  daily_retention INTEGER NOT NULL DEFAULT 7,
+  weekly_retention INTEGER NOT NULL DEFAULT 4,
+  monthly_retention INTEGER NOT NULL DEFAULT 12,
+  last_daily_at TEXT,
+  last_weekly_at TEXT,
+  last_monthly_at TEXT,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS backup_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type TEXT NOT NULL CHECK (type IN ('manual','daily','weekly','monthly')),
+  filename TEXT NOT NULL,
+  file_path TEXT NOT NULL,
+  size_bytes INTEGER,
+  status TEXT NOT NULL CHECK (status IN ('success','failed')) DEFAULT 'success',
+  error TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+INSERT OR IGNORE INTO backup_settings (id) VALUES (1);
+
 CREATE INDEX IF NOT EXISTS idx_brands_category ON brands(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand_id);

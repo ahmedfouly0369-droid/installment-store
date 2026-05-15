@@ -3,6 +3,7 @@ import path from 'node:path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { getDb, closeDb } from './db'
 import { registerIpc } from './ipc'
+import { scheduleBackups, stopScheduler } from './services/backup'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -63,6 +64,7 @@ void app.whenReady().then(() => {
   // Initialize DB and IPC handlers before creating windows
   getDb()
   registerIpc()
+  scheduleBackups()
 
   createWindow()
 
@@ -73,11 +75,13 @@ void app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
+    stopScheduler()
     closeDb()
     app.quit()
   }
 })
 
 app.on('before-quit', () => {
+  stopScheduler()
   closeDb()
 })

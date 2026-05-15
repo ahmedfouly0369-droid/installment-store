@@ -17,6 +17,7 @@ import { Expenses } from './pages/Expenses'
 import { Reports } from './pages/Reports'
 import { Notifications } from './pages/Notifications'
 import { Users } from './pages/Users'
+import { Backup } from './pages/Backup'
 
 export default function App() {
   return (
@@ -84,6 +85,14 @@ export default function App() {
           element={
             <ProtectedRoute roles={['admin']}>
               <Users />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="backup"
+          element={
+            <ProtectedRoute roles={['admin', 'accountant']}>
+              <Backup />
             </ProtectedRoute>
           }
         />
