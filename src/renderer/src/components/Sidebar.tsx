@@ -10,7 +10,8 @@ import {
   Wallet,
   BarChart3,
   Bell,
-  UserCog
+  UserCog,
+  Receipt
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../store/auth'
@@ -30,6 +31,7 @@ const items = [
   { to: '/customers', key: 'customers', icon: Users, roles: ['admin', 'accountant', 'sales'] },
   { to: '/sales', key: 'sales', icon: ShoppingCart, roles: ['admin', 'accountant', 'sales'] },
   { to: '/treasury', key: 'treasury', icon: Wallet, roles: ['admin', 'accountant'] },
+  { to: '/expenses', key: 'expenses', icon: Receipt, roles: ['admin', 'accountant'] },
   { to: '/reports', key: 'reports', icon: BarChart3, roles: ['admin', 'accountant'] },
   {
     to: '/notifications',
@@ -45,10 +47,10 @@ export function Sidebar() {
   const role = useAuthStore(s => s.user?.role)
 
   return (
-    <aside className="hidden w-64 shrink-0 border-e border-slate-200 bg-white py-4 md:flex md:flex-col">
+    <aside className="no-print hidden w-64 shrink-0 border-e border-slate-200 bg-white py-4 dark:border-slate-800 dark:bg-slate-900 md:flex md:flex-col">
       <div className="px-5 pb-4">
-        <div className="text-lg font-bold text-slate-900">{t('app.name')}</div>
-        <div className="text-xs text-slate-500">{t('app.subtitle')}</div>
+        <div className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('app.name')}</div>
+        <div className="text-xs text-slate-500 dark:text-slate-400">{t('app.subtitle')}</div>
       </div>
       <nav className="flex-1 space-y-1 px-2">
         {items
@@ -61,7 +63,9 @@ export function Sidebar() {
               className={({ isActive }) =>
                 cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition',
-                  isActive ? 'bg-brand-50 text-brand-700' : 'text-slate-700 hover:bg-slate-100'
+                  isActive
+                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-200'
+                    : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
                 )
               }
             >

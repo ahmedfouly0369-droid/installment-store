@@ -11,8 +11,10 @@ import {
   CartesianGrid,
   Legend
 } from 'recharts'
+import { Printer } from 'lucide-react'
 import { call } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
+import { escapeHtml, openPrintWindow } from '../lib/print'
 import type { SalesTrendPoint, Supplier } from '@shared/types'
 
 interface ProfitLoss {
@@ -25,7 +27,8 @@ interface ProfitLoss {
 
 export function Reports() {
   const { t, i18n } = useTranslation()
-  const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-US'
+  const isAr = i18n.language === 'ar'
+  const locale = isAr ? 'ar-EG' : 'en-US'
   const [range, setRange] = useState(30)
 
   const profitLoss = useQuery({
@@ -43,13 +46,82 @@ export function Reports() {
 
   const pl = profitLoss.data
 
+  const onPrintReport = () => {
+    const sb = supplierBalances.data ?? []
+    const periodLabel =
+      range === 30
+        ? t('reports.last_30')
+        : range === 60
+          ? t('reports.last_60')
+          : range === 90
+            ? t('reports.last_90')
+            : t('reports.last_365')
+    const supplierRows = sb
+      .map(
+        s => `<tr>
+          <td>${escapeHtml(s.name)}</td>
+          <td>${formatCurrency(s.total_purchases ?? 0, locale)}</td>
+          <td>${formatCurrency(s.total_paid ?? 0, locale)}</td>
+          <td>${formatCurrency(s.balance_due ?? 0, locale)}</td>
+        </tr>`
+      )
+      .join('')
+    const html = `
+      <div class="header">
+        <div>
+          <h1>${escapeHtml(t('print_report.title'))}</h1>
+          <div class="meta">${escapeHtml(t('app.name'))}</div>
+        </div>
+        <div class="meta" style="text-align:end;">
+          <div><strong>${escapeHtml(t('print_report.period'))}:</strong> ${escapeHtml(periodLabel)}</div>
+          <div><strong>${escapeHtml(t('print_report.generated_at'))}:</strong> ${new Date().toLocaleString(locale)}</div>
+        </div>
+      </div>
+
+      <h2>${escapeHtml(t('reports.profit_loss'))}</h2>
+      <div class="grid grid-4">
+        <div class="info-box"><div class="label">${escapeHtml(t('reports.revenue'))}</div><div class="value">${formatCurrency(pl?.revenue ?? 0, locale)}</div></div>
+        <div class="info-box"><div class="label">${escapeHtml(t('reports.cost'))}</div><div class="value">${formatCurrency(pl?.cost ?? 0, locale)}</div></div>
+        <div class="info-box"><div class="label">${escapeHtml(t('dashboard.profit'))}</div><div class="value">${formatCurrency(pl?.profit ?? 0, locale)}</div></div>
+        <div class="info-box"><div class="label">${escapeHtml(t('reports.expenses'))}</div><div class="value">${formatCurrency(pl?.expenses ?? 0, locale)}</div></div>
+      </div>
+      <div class="info-box" style="margin-top:12px;">
+        <div class="label">${escapeHtml(t('reports.net'))}</div>
+        <div class="value" style="font-size:18px;color:${(pl?.net ?? 0) >= 0 ? '#047857' : '#be123c'};">${formatCurrency(pl?.net ?? 0, locale)}</div>
+      </div>
+
+      <h2>${escapeHtml(t('reports.supplier_balances'))}</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>${escapeHtml(t('common.name'))}</th>
+            <th>${escapeHtml(t('suppliers.total_purchases'))}</th>
+            <th>${escapeHtml(t('suppliers.total_paid'))}</th>
+            <th>${escapeHtml(t('suppliers.balance_due'))}</th>
+          </tr>
+        </thead>
+        <tbody>${supplierRows || `<tr><td colspan="4" style="text-align:center;color:#64748b;padding:24px;">${escapeHtml(t('common.no_data'))}</td></tr>`}</tbody>
+      </table>
+    `
+    openPrintWindow(html, t('print_report.title'), isAr ? 'rtl' : 'ltr')
+  }
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-900">{t('reports.title')}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+          {t('reports.title')}
+        </h1>
+        <button className="btn-secondary" onClick={onPrintReport}>
+          <Printer size={16} /> {t('actions.print_report')}
+        </button>
+      </div>
 
       <div className="card">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-5 py-3">
-          <h3 className="font-semibold text-slate-900">{t('reports.profit_loss')}</h3>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-5 py-3 dark:border-slate-800">
+          <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+            {t('reports.profit_loss')}
+          </h3>
           <select
             className="input w-48"
             value={range}

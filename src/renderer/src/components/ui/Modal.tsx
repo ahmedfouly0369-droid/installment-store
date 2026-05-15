@@ -35,12 +35,12 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }: M
           'max-w-6xl': size === 'xl'
         })}
       >
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
-          <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3 dark:border-slate-800">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1 text-slate-500 hover:bg-slate-100"
+            className="rounded p-1 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
             aria-label={t('common.close')}
           >
             <X size={18} />
@@ -48,7 +48,7 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }: M
         </div>
         <div className="flex-1 overflow-auto p-5">{children}</div>
         {footer && (
-          <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-3">
+          <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-3 dark:border-slate-800">
             {footer}
           </div>
         )}

@@ -94,19 +94,27 @@ export function getDashboardSummary(token: string | null | undefined): Dashboard
     .prepare<[], { c: number }>("SELECT COUNT(*) AS c FROM installments WHERE status = 'overdue'")
     .get()
 
+  const expensesRow = db
+    .prepare<[], { v: number }>('SELECT COALESCE(SUM(amount),0) AS v FROM expenses')
+    .get()
+  const grossProfit = profitRow?.v ?? 0
+  const totalExpenses = expensesRow?.v ?? 0
+
   return {
     total_sales_value: totalSalesRow?.v ?? 0,
     total_inventory_value: inventoryRow?.v ?? 0,
     total_paid_to_suppliers: supplierTotals?.total_paid ?? 0,
     total_due_to_suppliers: totalDueToSuppliers,
     treasury_balance: treasuryBalance,
-    total_profit: profitRow?.v ?? 0,
+    total_profit: grossProfit,
     total_bad_debt: badDebtRow?.v ?? 0,
     outstanding_receivables: outstandingRow?.v ?? 0,
     overdue_receivables: overdueRow?.v ?? 0,
     customers_count: customersCount?.c ?? 0,
     active_sales_count: activeSalesCount?.c ?? 0,
-    overdue_installments_count: overdueInstCount?.c ?? 0
+    overdue_installments_count: overdueInstCount?.c ?? 0,
+    total_expenses: totalExpenses,
+    net_profit: grossProfit - totalExpenses
   }
 }
 
@@ -249,17 +257,23 @@ export function getProfitLoss(
     .prepare<
       [string],
       { v: number }
-    >("SELECT COALESCE(SUM(amount),0) AS v FROM treasury_entries WHERE type = 'out' AND category = 'bad_debt' AND entry_date >= ?")
+    >('SELECT COALESCE(SUM(amount),0) AS v FROM expenses WHERE expense_date >= ?')
+    .get(from)
+  const badDebtRow = db
+    .prepare<
+      [string],
+      { v: number }
+    >("SELECT COALESCE(SUM(amount - paid_amount),0) AS v FROM installments WHERE status = 'waived' AND COALESCE(paid_date, due_date) >= ?")
     .get(from)
   const revenue = revRow?.v ?? 0
   const cost = costRow?.v ?? 0
-  const expenses = expRow?.v ?? 0
+  const expensesTotal = (expRow?.v ?? 0) + (badDebtRow?.v ?? 0)
   const profit = revenue - cost
   return {
     revenue,
     cost,
     profit,
-    expenses,
-    net: profit - expenses
+    expenses: expensesTotal,
+    net: profit - expensesTotal
   }
 }

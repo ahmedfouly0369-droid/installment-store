@@ -233,6 +233,19 @@ CREATE TABLE IF NOT EXISTS treasury_entries (
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT
 );
 
+CREATE TABLE IF NOT EXISTS expenses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  category TEXT NOT NULL CHECK (category IN ('salary','operating','freight','return','damaged','other')),
+  employee_name TEXT,
+  amount REAL NOT NULL,
+  expense_date TEXT NOT NULL DEFAULT (date('now')),
+  description TEXT NOT NULL,
+  notes TEXT,
+  created_by INTEGER NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT
+);
+
 CREATE INDEX IF NOT EXISTS idx_brands_category ON brands(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_brand ON products(brand_id);
@@ -252,4 +265,6 @@ CREATE INDEX IF NOT EXISTS idx_payments_sale ON payments(sale_id);
 CREATE INDEX IF NOT EXISTS idx_payments_installment ON payments(installment_id);
 CREATE INDEX IF NOT EXISTS idx_treasury_entry_date ON treasury_entries(entry_date);
 CREATE INDEX IF NOT EXISTS idx_guarantors_customer ON guarantors(customer_id);
+CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(expense_date);
+CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category);
 `

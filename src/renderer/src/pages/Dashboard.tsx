@@ -14,12 +14,14 @@ import {
   Package,
   Wallet,
   TrendingUp,
+  TrendingDown,
   AlertTriangle,
   ShieldAlert,
   Users,
   ShoppingCart,
   HandCoins,
-  PiggyBank
+  PiggyBank,
+  Receipt
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
@@ -79,6 +81,18 @@ export function Dashboard() {
           value={formatCurrency(s?.total_profit ?? 0, locale)}
           icon={TrendingUp}
           tone="green"
+        />
+        <StatCard
+          title={t('dashboard.expenses')}
+          value={formatCurrency(s?.total_expenses ?? 0, locale)}
+          icon={Receipt}
+          tone="rose"
+        />
+        <StatCard
+          title={t('dashboard.net_profit')}
+          value={formatCurrency(s?.net_profit ?? 0, locale)}
+          icon={(s?.net_profit ?? 0) >= 0 ? TrendingUp : TrendingDown}
+          tone={(s?.net_profit ?? 0) >= 0 ? 'green' : 'rose'}
         />
         <StatCard
           title={t('dashboard.outstanding')}

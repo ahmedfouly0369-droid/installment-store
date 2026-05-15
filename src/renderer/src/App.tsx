@@ -13,6 +13,7 @@ import { CustomerDetail } from './pages/CustomerDetail'
 import { Sales } from './pages/Sales'
 import { SaleDetail } from './pages/SaleDetail'
 import { Treasury } from './pages/Treasury'
+import { Expenses } from './pages/Expenses'
 import { Reports } from './pages/Reports'
 import { Notifications } from './pages/Notifications'
 import { Users } from './pages/Users'
@@ -58,6 +59,14 @@ export default function App() {
           element={
             <ProtectedRoute roles={['admin', 'accountant']}>
               <Treasury />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="expenses"
+          element={
+            <ProtectedRoute roles={['admin', 'accountant']}>
+              <Expenses />
             </ProtectedRoute>
           }
         />

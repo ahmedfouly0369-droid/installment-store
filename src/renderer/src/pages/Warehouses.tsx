@@ -1,13 +1,14 @@
 import { FormEvent, useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { ArrowDownUp, Edit2, Plus, Trash2, Undo2 } from 'lucide-react'
+import { ArrowDownUp, Edit2, Plus, Printer, Trash2, Undo2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { call } from '../lib/api'
 import { Modal } from '../components/ui/Modal'
 import { Field } from '../components/ui/Field'
 import { useAuthStore } from '../store/auth'
 import { formatNumber } from '../lib/utils'
+import { escapeHtml, openPrintWindow } from '../lib/print'
 import type { InventoryItem, ItemCondition, Product, Warehouse } from '@shared/types'
 
 const CONDITIONS: ItemCondition[] = ['new', 'used', 'returned', 'damaged']
@@ -132,11 +133,77 @@ export function Warehouses() {
     }
   }
 
+  const onPrintInventory = () => {
+    const items = inventory.data ?? []
+    const wh = warehouses.data ?? []
+    const whName =
+      warehouseFilter === ''
+        ? t('print_inventory.filter_all')
+        : (() => {
+            const w = wh.find(x => x.id === warehouseFilter)
+            return w ? (isAr ? w.name_ar : w.name_en) : ''
+          })()
+    const condName =
+      conditionFilter === ''
+        ? t('print_inventory.filter_all')
+        : t(`warehouses.conditions.${conditionFilter}`)
+
+    const rows = items
+      .map(
+        i => `<tr>
+          <td>${escapeHtml(isAr ? i.warehouse_name_ar : i.warehouse_name_en)}</td>
+          <td>${escapeHtml(isAr ? i.product_name_ar : i.product_name_en)}</td>
+          <td>${escapeHtml(i.brand_name_ar ?? '')}</td>
+          <td>${escapeHtml(t(`warehouses.conditions.${i.condition}`))}</td>
+          <td>${formatNumber(i.quantity, locale)}</td>
+        </tr>`
+      )
+      .join('')
+
+    const totalQty = items.reduce((acc, i) => acc + i.quantity, 0)
+
+    const html = `
+      <div class="header">
+        <div>
+          <h1>${escapeHtml(t('print_inventory.title'))}</h1>
+          <div class="meta">${escapeHtml(t('app.name'))}</div>
+        </div>
+        <div class="meta" style="text-align:${isAr ? 'left' : 'right'};">
+          <div><strong>${escapeHtml(t('print_inventory.filter_warehouse'))}:</strong> ${escapeHtml(whName)}</div>
+          <div><strong>${escapeHtml(t('print_inventory.filter_condition'))}:</strong> ${escapeHtml(condName)}</div>
+          <div><strong>${escapeHtml(t('print_inventory.generated_at'))}:</strong> ${new Date().toLocaleString(locale)}</div>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>${escapeHtml(t('warehouses.title'))}</th>
+            <th>${escapeHtml(t('sales.product'))}</th>
+            <th>${escapeHtml(t('categories.brand'))}</th>
+            <th>${escapeHtml(t('warehouses.condition'))}</th>
+            <th>${escapeHtml(t('warehouses.quantity'))}</th>
+          </tr>
+        </thead>
+        <tbody>${rows || `<tr><td colspan="5" style="text-align:center;color:#64748b;padding:24px;">${escapeHtml(t('common.no_data'))}</td></tr>`}</tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" style="text-align:${isAr ? 'left' : 'right'};font-weight:700;">${escapeHtml(t('common.total'))}</td>
+            <td style="font-weight:700;">${formatNumber(totalQty, locale)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    `
+    openPrintWindow(html, t('print_inventory.title'), isAr ? 'rtl' : 'ltr')
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-bold text-slate-900">{t('warehouses.title')}</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <button className="btn-secondary" onClick={onPrintInventory}>
+            <Printer size={16} /> {t('actions.print_inventory')}
+          </button>
           {canAdjust && (
             <>
               <button className="btn-secondary" onClick={() => setAdjustModal({ open: true })}>
