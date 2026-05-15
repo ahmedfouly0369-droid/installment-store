@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { IPC, type IpcResult } from '@shared/ipc-channels'
 import * as auth from '../services/auth'
 import * as categories from '../services/categories'
@@ -10,8 +10,33 @@ import * as sales from '../services/sales'
 import * as reports from '../services/reports'
 import * as treasury from '../services/treasury'
 import * as expenses from '../services/expenses'
+import * as backup from '../services/backup'
 
 type Handler = (...args: unknown[]) => unknown
+
+async function pickFolder(defaultPath?: string): Promise<string | null> {
+  const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  const result = await dialog.showOpenDialog(win, {
+    properties: ['openDirectory', 'createDirectory'],
+    defaultPath
+  })
+  if (result.canceled || result.filePaths.length === 0) return null
+  return result.filePaths[0]
+}
+
+async function pickBackupFile(defaultPath?: string): Promise<string | null> {
+  const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  const result = await dialog.showOpenDialog(win, {
+    properties: ['openFile'],
+    defaultPath,
+    filters: [
+      { name: 'Database', extensions: ['db'] },
+      { name: 'All Files', extensions: ['*'] }
+    ]
+  })
+  if (result.canceled || result.filePaths.length === 0) return null
+  return result.filePaths[0]
+}
 
 function wrap<T>(fn: () => T): IpcResult<T> {
   try {
@@ -22,8 +47,21 @@ function wrap<T>(fn: () => T): IpcResult<T> {
   }
 }
 
+async function wrapAsync<T>(fn: () => Promise<T>): Promise<IpcResult<T>> {
+  try {
+    return { ok: true, data: await fn() }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    return { ok: false, error: message }
+  }
+}
+
 function on<T>(channel: string, fn: (...args: unknown[]) => T): void {
   ipcMain.handle(channel, async (_event, ...args) => wrap(() => fn(...args)))
+}
+
+function onAsync<T>(channel: string, fn: (...args: unknown[]) => Promise<T>): void {
+  ipcMain.handle(channel, async (_event, ...args) => wrapAsync(() => fn(...args)))
 }
 
 export function registerIpc(): void {
@@ -317,6 +355,34 @@ export function registerIpc(): void {
   on(IPC.EXPENSES.SUMMARY, (...args) => {
     const [token, filters] = args as [string, Parameters<typeof expenses.getExpensesSummary>[1]]
     return expenses.getExpensesSummary(token, filters)
+  })
+
+  on(IPC.BACKUP.SETTINGS_GET, (...args) => backup.getBackupSettings((args as [string])[0]))
+  on(IPC.BACKUP.SETTINGS_UPDATE, (...args) => {
+    const [token, input] = args as [string, Parameters<typeof backup.updateBackupSettings>[1]]
+    return backup.updateBackupSettings(token, input)
+  })
+  on(IPC.BACKUP.RUN, (...args) => backup.runManualBackup((args as [string])[0]))
+  on(IPC.BACKUP.LIST_LOGS, (...args) => {
+    const [token, limit] = args as [string, number | undefined]
+    return backup.listBackupLogs(token, limit)
+  })
+  on(IPC.BACKUP.RESTORE, (...args) => {
+    const [token, sourcePath] = args as [string, string]
+    return backup.restoreBackup(token, sourcePath)
+  })
+  onAsync(IPC.BACKUP.PICK_FOLDER, async (...args) => {
+    const [, defaultPath] = args as [string, string | undefined]
+    return pickFolder(defaultPath)
+  })
+  onAsync(IPC.BACKUP.PICK_FILE, async (...args) => {
+    const [, defaultPath] = args as [string, string | undefined]
+    return pickBackupFile(defaultPath)
+  })
+  onAsync(IPC.BACKUP.OPEN_FOLDER, async (...args) => {
+    const [, folderPath] = args as [string, string]
+    if (folderPath) await shell.openPath(folderPath)
+    return true
   })
 }
 

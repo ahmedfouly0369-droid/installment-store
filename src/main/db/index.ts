@@ -7,12 +7,16 @@ import { seedDatabase } from './seed'
 
 let dbInstance: Database.Database | null = null
 
+export function getDbPath(): string {
+  const userDataDir = app.getPath('userData')
+  mkdirSync(userDataDir, { recursive: true })
+  return path.join(userDataDir, 'installment-store.db')
+}
+
 export function getDb(): Database.Database {
   if (dbInstance) return dbInstance
 
-  const userDataDir = app.getPath('userData')
-  mkdirSync(userDataDir, { recursive: true })
-  const dbPath = path.join(userDataDir, 'installment-store.db')
+  const dbPath = getDbPath()
   const db = new Database(dbPath)
   db.pragma('journal_mode = WAL')
   db.pragma('foreign_keys = ON')

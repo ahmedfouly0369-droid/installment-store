@@ -11,7 +11,8 @@ import {
   BarChart3,
   Bell,
   UserCog,
-  Receipt
+  Receipt,
+  DatabaseBackup
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../store/auth'
@@ -39,7 +40,8 @@ const items = [
     icon: Bell,
     roles: ['admin', 'accountant', 'sales']
   },
-  { to: '/users', key: 'users', icon: UserCog, roles: ['admin'] }
+  { to: '/users', key: 'users', icon: UserCog, roles: ['admin'] },
+  { to: '/backup', key: 'backup', icon: DatabaseBackup, roles: ['admin', 'accountant'] }
 ]
 
 export function Sidebar() {

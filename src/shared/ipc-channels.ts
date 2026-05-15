@@ -92,6 +92,16 @@ export const IPC = {
     UPDATE: 'expenses:update',
     DELETE: 'expenses:delete',
     SUMMARY: 'expenses:summary'
+  },
+  BACKUP: {
+    SETTINGS_GET: 'backup:settings:get',
+    SETTINGS_UPDATE: 'backup:settings:update',
+    RUN: 'backup:run',
+    LIST_LOGS: 'backup:list-logs',
+    RESTORE: 'backup:restore',
+    PICK_FOLDER: 'backup:pick-folder',
+    PICK_FILE: 'backup:pick-file',
+    OPEN_FOLDER: 'backup:open-folder'
   }
 } as const
 
