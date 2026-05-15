@@ -7,11 +7,23 @@ import toast from 'react-hot-toast'
 import { call } from '../lib/api'
 import { Modal } from '../components/ui/Modal'
 import { Field } from '../components/ui/Field'
+import { ImportExportBar } from '../components/ImportExportBar'
 import { useAuthStore } from '../store/auth'
 import { formatCurrency } from '../lib/utils'
 import type { Supplier, SupplierPaymentTerms } from '@shared/types'
 
 const TERMS: SupplierPaymentTerms[] = ['cash', 'credit_30', 'credit_60', 'credit_90', 'custom']
+
+interface SupplierImportRow {
+  name: string | null
+  contact_person: string | null
+  phone: string | null
+  email: string | null
+  tax_id: string | null
+  payment_terms: string | null
+  address: string | null
+  notes: string | null
+}
 
 export function Suppliers() {
   const { t, i18n } = useTranslation()
@@ -65,15 +77,163 @@ export function Suppliers() {
     }
   }
 
+  const termsAliases: Record<string, SupplierPaymentTerms> = {
+    cash: 'cash',
+    نقدي: 'cash',
+    credit_30: 'credit_30',
+    'آجل 30 يوم': 'credit_30',
+    credit_60: 'credit_60',
+    'آجل 60 يوم': 'credit_60',
+    credit_90: 'credit_90',
+    'آجل 90 يوم': 'credit_90',
+    custom: 'custom',
+    مخصص: 'custom'
+  }
+
+  const onImportSupplier = async (row: SupplierImportRow) => {
+    if (!row.name) {
+      throw new Error(t('import_export.missing_required'))
+    }
+    const rawTerms = row.payment_terms ? String(row.payment_terms).trim() : 'cash'
+    const payment_terms = termsAliases[rawTerms.toLowerCase()] ?? termsAliases[rawTerms] ?? 'cash'
+    await call('suppliers:create', {
+      name: String(row.name),
+      contact_person: row.contact_person ? String(row.contact_person) : null,
+      phone: row.phone ? String(row.phone) : null,
+      email: row.email ? String(row.email) : null,
+      tax_id: row.tax_id ? String(row.tax_id) : null,
+      payment_terms,
+      address: row.address ? String(row.address) : null,
+      notes: row.notes ? String(row.notes) : null
+    })
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold text-slate-900">{t('suppliers.title')}</h1>
-        {canEdit && (
-          <button className="btn-primary" onClick={() => setModal({ open: true, data: null })}>
-            <Plus size={16} /> {t('suppliers.add')}
-          </button>
-        )}
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+          {t('suppliers.title')}
+        </h1>
+        <div className="flex flex-wrap gap-2">
+          <ImportExportBar<Supplier, SupplierImportRow>
+            entityName={t('suppliers.title')}
+            dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}
+            filename="suppliers"
+            rows={suppliers.data ?? []}
+            exportColumns={[
+              { key: 'id', header: '#' },
+              { key: 'name', header: t('common.name') },
+              { key: 'contact_person', header: t('suppliers.contact_person') },
+              { key: 'phone', header: t('common.phone') },
+              { key: 'email', header: 'Email' },
+              { key: 'tax_id', header: t('suppliers.tax_id') },
+              {
+                key: 'payment_terms',
+                header: t('suppliers.payment_terms'),
+                get: (s: Supplier) => t(`suppliers.terms.${s.payment_terms}`)
+              },
+              { key: 'address', header: t('common.address') },
+              { key: 'notes', header: t('common.notes') },
+              {
+                key: 'total_purchases',
+                header: t('suppliers.total_purchases'),
+                get: (s: Supplier) => s.total_purchases ?? 0
+              },
+              {
+                key: 'total_paid',
+                header: t('suppliers.total_paid'),
+                get: (s: Supplier) => s.total_paid ?? 0
+              },
+              {
+                key: 'balance_due',
+                header: t('suppliers.balance_due'),
+                get: (s: Supplier) => s.balance_due ?? 0
+              }
+            ]}
+            pdfColumns={[
+              { header: t('common.name'), get: (s: Supplier) => s.name },
+              { header: t('common.phone'), get: (s: Supplier) => s.phone ?? '-' },
+              {
+                header: t('suppliers.payment_terms'),
+                get: (s: Supplier) => t(`suppliers.terms.${s.payment_terms}`)
+              },
+              {
+                header: t('suppliers.total_purchases'),
+                get: (s: Supplier) => formatCurrency(s.total_purchases ?? 0, locale)
+              },
+              {
+                header: t('suppliers.total_paid'),
+                get: (s: Supplier) => formatCurrency(s.total_paid ?? 0, locale)
+              },
+              {
+                header: t('suppliers.balance_due'),
+                get: (s: Supplier) => formatCurrency(s.balance_due ?? 0, locale)
+              }
+            ]}
+            pdfSubtitle={t('app.name')}
+            pdfMeta={{
+              [t('common.total')]: String((suppliers.data ?? []).length)
+            }}
+            importColumns={
+              canEdit
+                ? [
+                    {
+                      key: 'name',
+                      aliases: [t('common.name'), 'name', 'الاسم'],
+                      required: true
+                    },
+                    {
+                      key: 'contact_person',
+                      aliases: [t('suppliers.contact_person'), 'contact_person', 'شخص الاتصال']
+                    },
+                    {
+                      key: 'phone',
+                      aliases: [t('common.phone'), 'phone', 'رقم الجوال', 'mobile']
+                    },
+                    { key: 'email', aliases: ['Email', 'email', 'البريد الإلكتروني'] },
+                    {
+                      key: 'tax_id',
+                      aliases: [t('suppliers.tax_id'), 'tax_id', 'الرقم الضريبي']
+                    },
+                    {
+                      key: 'payment_terms',
+                      aliases: [t('suppliers.payment_terms'), 'payment_terms', 'نظام الدفع']
+                    },
+                    { key: 'address', aliases: [t('common.address'), 'address', 'العنوان'] },
+                    { key: 'notes', aliases: [t('common.notes'), 'notes', 'ملاحظات'] }
+                  ]
+                : undefined
+            }
+            importTemplateHeaders={[
+              t('common.name'),
+              t('suppliers.contact_person'),
+              t('common.phone'),
+              'Email',
+              t('suppliers.tax_id'),
+              t('suppliers.payment_terms'),
+              t('common.address'),
+              t('common.notes')
+            ]}
+            importSampleRow={[
+              'شركة المنزل الذكي',
+              'محمد علي',
+              '0223456789',
+              'sales@example.com',
+              '123456789',
+              'cash',
+              'القاهرة',
+              ''
+            ]}
+            onImportRow={onImportSupplier}
+            onImportComplete={() => qc.invalidateQueries({ queryKey: ['suppliers'] })}
+            canImport={canEdit}
+          />
+          {canEdit && (
+            <button className="btn-primary" onClick={() => setModal({ open: true, data: null })}>
+              <Plus size={16} /> {t('suppliers.add')}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="card card-body">

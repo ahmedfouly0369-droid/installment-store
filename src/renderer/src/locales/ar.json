@@ -329,5 +329,28 @@
     "days_overdue": "متأخر بـ {{days}} يوم",
     "due_in": "مستحق خلال {{days}} يوم",
     "go_to_customer": "فتح ملف العميل"
+  },
+  "import_export": {
+    "export_excel": "تصدير Excel",
+    "export_pdf": "تصدير PDF",
+    "import_excel": "استيراد Excel",
+    "download_template": "تنزيل ملف القالب",
+    "preview_title": "معاينة الاستيراد - {{name}}",
+    "confirm_import": "استيراد ({{count}})",
+    "importing": "جاري الاستيراد...",
+    "import_done": "تم استيراد {{count}} صف بنجاح",
+    "partial_success": "تم استيراد {{ok}} صف ونجح {{fail}}",
+    "empty_file": "الملف لا يحتوي على أي بيانات",
+    "parse_failed": "تعذر قراءة الملف",
+    "unmatched_headers": "أعمدة غير معروفة (تم تجاهلها)",
+    "rows_count": "عدد الصفوف الجاهزة للاستيراد: {{count}}",
+    "preview_truncated": "تم عرض {{shown}} صف من إجمالي {{total}}",
+    "export_done": "تم التصدير",
+    "missing_required": "حقول مطلوبة ناقصة",
+    "unknown_category": "صنف غير موجود: {{value}}",
+    "unknown_brand": "براند غير موجود: {{value}}",
+    "unknown_warehouse": "مخزن غير موجود: {{value}}",
+    "unknown_condition": "حالة غير صحيحة: {{value}}",
+    "invalid_number": "قيمة عددية غير صحيحة في حقل {{field}}"
   }
 }

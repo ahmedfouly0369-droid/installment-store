@@ -7,9 +7,20 @@ import toast from 'react-hot-toast'
 import { call } from '../lib/api'
 import { Modal } from '../components/ui/Modal'
 import { Field } from '../components/ui/Field'
+import { ImportExportBar } from '../components/ImportExportBar'
 import { useAuthStore } from '../store/auth'
 import { formatCurrency } from '../lib/utils'
 import type { Customer, GuarantorInput } from '@shared/types'
+
+interface CustomerImportRow {
+  full_name: string | null
+  national_id: string | null
+  phone: string | null
+  alt_phone: string | null
+  address: string | null
+  workplace: string | null
+  notes: string | null
+}
 
 interface CustomerFormState {
   full_name: string
@@ -144,15 +155,114 @@ export function Customers() {
     }
   }
 
+  const importColumns = [
+    { key: 'full_name', aliases: [t('common.name'), 'full_name', 'name', 'الاسم'], required: true },
+    {
+      key: 'national_id',
+      aliases: [t('customers.national_id'), 'national_id', 'الرقم القومي'],
+      required: true
+    },
+    { key: 'phone', aliases: [t('common.phone'), 'phone', 'رقم الجوال', 'mobile'], required: true },
+    {
+      key: 'alt_phone',
+      aliases: [t('customers.alt_phone'), 'alt_phone', 'هاتف بديل']
+    },
+    { key: 'address', aliases: [t('common.address'), 'address', 'العنوان'] },
+    { key: 'workplace', aliases: [t('customers.workplace'), 'workplace', 'جهة العمل'] },
+    { key: 'notes', aliases: [t('common.notes'), 'notes', 'ملاحظات'] }
+  ]
+
+  const onImportCustomer = async (row: CustomerImportRow) => {
+    if (!row.full_name || !row.national_id || !row.phone) {
+      throw new Error(t('import_export.missing_required'))
+    }
+    await call('customers:create', {
+      full_name: String(row.full_name),
+      national_id: String(row.national_id),
+      phone: String(row.phone),
+      alt_phone: row.alt_phone ? String(row.alt_phone) : null,
+      address: row.address ? String(row.address) : null,
+      workplace: row.workplace ? String(row.workplace) : null,
+      notes: row.notes ? String(row.notes) : null,
+      guarantors: []
+    })
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold text-slate-900">{t('customers.title')}</h1>
-        {canEdit && (
-          <button className="btn-primary" onClick={openCreate}>
-            <UserPlus size={16} /> {t('customers.add')}
-          </button>
-        )}
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+          {t('customers.title')}
+        </h1>
+        <div className="flex flex-wrap gap-2">
+          <ImportExportBar<Customer, CustomerImportRow>
+            entityName={t('customers.title')}
+            dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}
+            filename="customers"
+            rows={customers.data ?? []}
+            exportColumns={[
+              { key: 'id', header: '#' },
+              { key: 'full_name', header: t('common.name') },
+              { key: 'national_id', header: t('customers.national_id') },
+              { key: 'phone', header: t('common.phone') },
+              { key: 'alt_phone', header: t('customers.alt_phone') },
+              { key: 'address', header: t('common.address') },
+              { key: 'workplace', header: t('customers.workplace') },
+              { key: 'notes', header: t('common.notes') },
+              {
+                key: 'outstanding_balance',
+                header: t('customers.outstanding'),
+                get: (c: Customer) => c.outstanding_balance ?? 0
+              },
+              {
+                key: 'overdue_balance',
+                header: t('dashboard.overdue'),
+                get: (c: Customer) => c.overdue_balance ?? 0
+              },
+              {
+                key: 'is_blacklisted',
+                header: t('common.status'),
+                get: (c: Customer) => (c.is_blacklisted ? t('customers.blacklisted') : 'OK')
+              }
+            ]}
+            pdfColumns={[
+              { header: t('common.name'), get: (c: Customer) => c.full_name },
+              { header: t('customers.national_id'), get: (c: Customer) => c.national_id },
+              { header: t('common.phone'), get: (c: Customer) => c.phone },
+              {
+                header: t('customers.outstanding'),
+                get: (c: Customer) => formatCurrency(c.outstanding_balance ?? 0, locale)
+              },
+              {
+                header: t('dashboard.overdue'),
+                get: (c: Customer) => formatCurrency(c.overdue_balance ?? 0, locale)
+              }
+            ]}
+            pdfSubtitle={t('app.name')}
+            pdfMeta={{
+              [t('common.total')]: String((customers.data ?? []).length)
+            }}
+            importColumns={canEdit ? importColumns : undefined}
+            importTemplateHeaders={[
+              t('common.name'),
+              t('customers.national_id'),
+              t('common.phone'),
+              t('customers.alt_phone'),
+              t('common.address'),
+              t('customers.workplace'),
+              t('common.notes')
+            ]}
+            importSampleRow={['أحمد محمد', '29001011234567', '01012345678', '', 'القاهرة', '', '']}
+            onImportRow={onImportCustomer}
+            onImportComplete={() => qc.invalidateQueries({ queryKey: ['customers'] })}
+            canImport={canEdit}
+          />
+          {canEdit && (
+            <button className="btn-primary" onClick={openCreate}>
+              <UserPlus size={16} /> {t('customers.add')}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="card card-body space-y-3">

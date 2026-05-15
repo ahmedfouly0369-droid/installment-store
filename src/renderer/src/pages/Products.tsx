@@ -6,9 +6,22 @@ import toast from 'react-hot-toast'
 import { call } from '../lib/api'
 import { Modal } from '../components/ui/Modal'
 import { Field } from '../components/ui/Field'
+import { ImportExportBar } from '../components/ImportExportBar'
 import { useAuthStore } from '../store/auth'
 import { formatCurrency, formatNumber } from '../lib/utils'
 import type { Brand, Category, Product } from '@shared/types'
+
+interface ProductImportRow {
+  name_ar: string | null
+  name_en: string | null
+  category: string | null
+  brand: string | null
+  model: string | null
+  cost_price: string | number | null
+  cash_price: string | number | null
+  installment_price: string | number | null
+  description: string | null
+}
 
 export function Products() {
   const { t, i18n } = useTranslation()
@@ -101,15 +114,201 @@ export function Products() {
     }
   }
 
+  const onImportProduct = async (row: ProductImportRow) => {
+    if (!row.name_ar && !row.name_en) {
+      throw new Error(t('import_export.missing_required'))
+    }
+    if (!row.category) {
+      throw new Error(t('import_export.unknown_category', { value: '' }))
+    }
+    if (!row.brand) {
+      throw new Error(t('import_export.unknown_brand', { value: '' }))
+    }
+    const catSearch = String(row.category).trim().toLowerCase()
+    const cat = (cats.data ?? []).find(
+      c =>
+        c.name_ar.trim().toLowerCase() === catSearch || c.name_en.trim().toLowerCase() === catSearch
+    )
+    if (!cat) {
+      throw new Error(t('import_export.unknown_category', { value: row.category }))
+    }
+    const brandSearch = String(row.brand).trim().toLowerCase()
+    const brand = (allBrands.data ?? []).find(
+      b =>
+        b.category_id === cat.id &&
+        (b.name_ar.trim().toLowerCase() === brandSearch ||
+          b.name_en.trim().toLowerCase() === brandSearch)
+    )
+    if (!brand) {
+      throw new Error(t('import_export.unknown_brand', { value: row.brand }))
+    }
+    const parseNumber = (val: unknown, field: string): number => {
+      if (val === null || val === undefined || val === '') return 0
+      const n = typeof val === 'number' ? val : Number(String(val).replace(/,/g, ''))
+      if (Number.isNaN(n)) {
+        throw new Error(t('import_export.invalid_number', { field }))
+      }
+      return n
+    }
+    await call('products:create', {
+      category_id: cat.id,
+      brand_id: brand.id,
+      name_ar: String(row.name_ar ?? row.name_en),
+      name_en: String(row.name_en ?? row.name_ar),
+      model: row.model ? String(row.model) : null,
+      cost_price: parseNumber(row.cost_price, t('products.cost_price')),
+      cash_price: parseNumber(row.cash_price, t('products.cash_price')),
+      installment_price: parseNumber(row.installment_price, t('products.installment_price')),
+      description: row.description ? String(row.description) : null
+    })
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold text-slate-900">{t('products.title')}</h1>
-        {canEdit && (
-          <button className="btn-primary" onClick={openCreate}>
-            <Plus size={16} /> {t('products.add')}
-          </button>
-        )}
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+          {t('products.title')}
+        </h1>
+        <div className="flex flex-wrap gap-2">
+          <ImportExportBar<Product, ProductImportRow>
+            entityName={t('products.title')}
+            dir={isAr ? 'rtl' : 'ltr'}
+            filename="products"
+            rows={products.data ?? []}
+            exportColumns={[
+              { key: 'id', header: '#' },
+              { key: 'name_ar', header: `${t('common.name')} (AR)` },
+              { key: 'name_en', header: `${t('common.name')} (EN)` },
+              {
+                key: 'category',
+                header: t('categories.category'),
+                get: (p: Product) => (isAr ? p.category_name_ar : p.category_name_en) ?? ''
+              },
+              {
+                key: 'brand',
+                header: t('categories.brand'),
+                get: (p: Product) => (isAr ? p.brand_name_ar : p.brand_name_en) ?? ''
+              },
+              { key: 'model', header: t('products.model') },
+              { key: 'cost_price', header: t('products.cost_price') },
+              { key: 'cash_price', header: t('products.cash_price') },
+              { key: 'installment_price', header: t('products.installment_price') },
+              {
+                key: 'stock_qty',
+                header: t('products.stock'),
+                get: (p: Product) => p.stock_qty ?? 0
+              },
+              { key: 'description', header: t('products.description') }
+            ]}
+            pdfColumns={[
+              {
+                header: t('common.name'),
+                get: (p: Product) => (isAr ? p.name_ar : p.name_en)
+              },
+              {
+                header: t('categories.category'),
+                get: (p: Product) => (isAr ? p.category_name_ar : p.category_name_en) ?? ''
+              },
+              {
+                header: t('categories.brand'),
+                get: (p: Product) => (isAr ? p.brand_name_ar : p.brand_name_en) ?? ''
+              },
+              { header: t('products.model'), get: (p: Product) => p.model ?? '-' },
+              {
+                header: t('products.cash_price'),
+                get: (p: Product) => formatCurrency(p.cash_price, locale)
+              },
+              {
+                header: t('products.installment_price'),
+                get: (p: Product) => formatCurrency(p.installment_price, locale)
+              },
+              {
+                header: t('products.stock'),
+                get: (p: Product) => formatNumber(p.stock_qty ?? 0, locale)
+              }
+            ]}
+            pdfSubtitle={t('app.name')}
+            pdfMeta={{
+              [t('common.total')]: String((products.data ?? []).length)
+            }}
+            importColumns={
+              canEdit
+                ? [
+                    {
+                      key: 'name_ar',
+                      aliases: [
+                        `${t('common.name')} (AR)`,
+                        'name_ar',
+                        'الاسم بالعربي',
+                        t('common.name')
+                      ]
+                    },
+                    {
+                      key: 'name_en',
+                      aliases: [`${t('common.name')} (EN)`, 'name_en', 'الاسم بالإنجليزي']
+                    },
+                    {
+                      key: 'category',
+                      aliases: [t('categories.category'), 'category', 'الصنف'],
+                      required: true
+                    },
+                    {
+                      key: 'brand',
+                      aliases: [t('categories.brand'), 'brand', 'البراند'],
+                      required: true
+                    },
+                    { key: 'model', aliases: [t('products.model'), 'model', 'الموديل'] },
+                    {
+                      key: 'cost_price',
+                      aliases: [t('products.cost_price'), 'cost_price', 'سعر التكلفة']
+                    },
+                    {
+                      key: 'cash_price',
+                      aliases: [t('products.cash_price'), 'cash_price', 'سعر الكاش']
+                    },
+                    {
+                      key: 'installment_price',
+                      aliases: [t('products.installment_price'), 'installment_price', 'سعر التقسيط']
+                    },
+                    {
+                      key: 'description',
+                      aliases: [t('products.description'), 'description', 'الوصف']
+                    }
+                  ]
+                : undefined
+            }
+            importTemplateHeaders={[
+              `${t('common.name')} (AR)`,
+              `${t('common.name')} (EN)`,
+              t('categories.category'),
+              t('categories.brand'),
+              t('products.model'),
+              t('products.cost_price'),
+              t('products.cash_price'),
+              t('products.installment_price'),
+              t('products.description')
+            ]}
+            importSampleRow={[
+              'ثلاجة 16 قدم',
+              'Fridge 16 ft',
+              'ثلاجة',
+              'كريازي',
+              'KZ-16D',
+              12000,
+              15000,
+              17000,
+              ''
+            ]}
+            onImportRow={onImportProduct}
+            onImportComplete={() => qc.invalidateQueries({ queryKey: ['products'] })}
+            canImport={canEdit}
+          />
+          {canEdit && (
+            <button className="btn-primary" onClick={openCreate}>
+              <Plus size={16} /> {t('products.add')}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="card">
