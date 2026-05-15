@@ -55,7 +55,9 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-900">{t('dashboard.title')}</h1>
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+        {t('dashboard.title')}
+      </h1>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
@@ -68,7 +70,7 @@ export function Dashboard() {
           title={t('dashboard.inventory_value')}
           value={formatCurrency(s?.total_inventory_value ?? 0, locale)}
           icon={Package}
-          tone="blue"
+          tone="cyan"
         />
         <StatCard
           title={t('dashboard.treasury_balance')}
@@ -80,7 +82,7 @@ export function Dashboard() {
           title={t('dashboard.profit')}
           value={formatCurrency(s?.total_profit ?? 0, locale)}
           icon={TrendingUp}
-          tone="green"
+          tone="violet"
         />
         <StatCard
           title={t('dashboard.expenses')}
@@ -111,7 +113,7 @@ export function Dashboard() {
           title={t('dashboard.due_to_suppliers')}
           value={formatCurrency(s?.total_due_to_suppliers ?? 0, locale)}
           icon={Banknote}
-          tone="rose"
+          tone="blue"
         />
         <StatCard
           title={t('dashboard.bad_debt')}

@@ -17,6 +17,7 @@ interface ProductImportRow {
   category: string | null
   brand: string | null
   model: string | null
+  code: string | null
   cost_price: string | number | null
   cash_price: string | number | null
   installment_price: string | number | null
@@ -85,6 +86,7 @@ export function Products() {
       name_ar: String(fd.get('name_ar') ?? ''),
       name_en: String(fd.get('name_en') ?? ''),
       model: (String(fd.get('model') ?? '') || null) as string | null,
+      code: (String(fd.get('code') ?? '') || null) as string | null,
       cost_price: Number(fd.get('cost_price') ?? 0),
       cash_price: Number(fd.get('cash_price') ?? 0),
       installment_price: Number(fd.get('installment_price') ?? 0),
@@ -156,6 +158,7 @@ export function Products() {
       name_ar: String(row.name_ar ?? row.name_en),
       name_en: String(row.name_en ?? row.name_ar),
       model: row.model ? String(row.model) : null,
+      code: row.code ? String(row.code) : null,
       cost_price: parseNumber(row.cost_price, t('products.cost_price')),
       cash_price: parseNumber(row.cash_price, t('products.cash_price')),
       installment_price: parseNumber(row.installment_price, t('products.installment_price')),
@@ -189,6 +192,7 @@ export function Products() {
                 header: t('categories.brand'),
                 get: (p: Product) => (isAr ? p.brand_name_ar : p.brand_name_en) ?? ''
               },
+              { key: 'code', header: t('products.code'), get: (p: Product) => p.code ?? '' },
               { key: 'model', header: t('products.model') },
               { key: 'cost_price', header: t('products.cost_price') },
               { key: 'cash_price', header: t('products.cash_price') },
@@ -258,6 +262,7 @@ export function Products() {
                       required: true
                     },
                     { key: 'model', aliases: [t('products.model'), 'model', 'الموديل'] },
+                    { key: 'code', aliases: [t('products.code'), 'code', 'الكود', 'SKU'] },
                     {
                       key: 'cost_price',
                       aliases: [t('products.cost_price'), 'cost_price', 'سعر التكلفة']
@@ -358,6 +363,7 @@ export function Products() {
           <table className="table">
             <thead>
               <tr>
+                <th className="w-24">{t('products.code')}</th>
                 <th>{t('common.name')}</th>
                 <th>{t('categories.category')}</th>
                 <th>{t('categories.brand')}</th>
@@ -372,6 +378,7 @@ export function Products() {
             <tbody>
               {(products.data ?? []).map(p => (
                 <tr key={p.id}>
+                  <td className="font-mono text-xs text-slate-600">{p.code ?? '—'}</td>
                   <td className="font-medium">{isAr ? p.name_ar : p.name_en}</td>
                   <td>{isAr ? p.category_name_ar : p.category_name_en}</td>
                   <td>{isAr ? p.brand_name_ar : p.brand_name_en}</td>
@@ -450,6 +457,14 @@ export function Products() {
           </Field>
           <Field label={t('products.model')}>
             <input className="input" name="model" defaultValue={modal.data?.model ?? ''} />
+          </Field>
+          <Field label={t('products.code')}>
+            <input
+              className="input"
+              name="code"
+              defaultValue={modal.data?.code ?? ''}
+              placeholder="SKU-001"
+            />
           </Field>
           <Field label={t('products.cost_price')} required>
             <input

@@ -2,9 +2,13 @@ import { addDays, format, startOfMonth, subDays, subMonths } from 'date-fns'
 import { getDb } from '../db'
 import { requireUser } from './auth'
 import { refreshOverdueStatuses } from './sales'
+import { getBadDebtThresholdDays, getOverdueMinDays } from './settings'
 import type {
   DashboardSummary,
   Installment,
+  InstallmentDueRow,
+  InstallmentRangeReport,
+  NotificationSummary,
   OverdueAlert,
   SalesTrendPoint,
   Supplier
@@ -65,12 +69,17 @@ export function getDashboardSummary(token: string | null | undefined): Dashboard
     )
     .get()
 
+  const badDebtThreshold = getBadDebtThresholdDays()
+  const badDebtCutoff = format(subDays(new Date(), badDebtThreshold), 'yyyy-MM-dd')
+
   const badDebtRow = db
-    .prepare<
-      [],
-      { v: number }
-    >(`SELECT COALESCE(SUM(amount - paid_amount),0) AS v FROM installments WHERE status = 'waived'`)
-    .get()
+    .prepare<[string], { v: number }>(
+      `SELECT COALESCE(SUM(amount - paid_amount),0) AS v
+       FROM installments
+       WHERE (status = 'waived')
+          OR (status NOT IN ('paid','waived') AND due_date < ?)`
+    )
+    .get(badDebtCutoff)
 
   const outstandingRow = db
     .prepare<[], { v: number }>(
@@ -80,19 +89,23 @@ export function getDashboardSummary(token: string | null | undefined): Dashboard
     .get()
 
   const overdueRow = db
-    .prepare<[string], { v: number }>(
+    .prepare<[string, string], { v: number }>(
       `SELECT COALESCE(SUM(amount - paid_amount),0) AS v
-       FROM installments WHERE status NOT IN ('paid','waived') AND due_date < ?`
+       FROM installments
+       WHERE status NOT IN ('paid','waived') AND due_date < ? AND due_date >= ?`
     )
-    .get(today)
+    .get(today, badDebtCutoff)
 
   const customersCount = db.prepare<[], { c: number }>('SELECT COUNT(*) AS c FROM customers').get()
   const activeSalesCount = db
     .prepare<[], { c: number }>("SELECT COUNT(*) AS c FROM sales WHERE status = 'active'")
     .get()
   const overdueInstCount = db
-    .prepare<[], { c: number }>("SELECT COUNT(*) AS c FROM installments WHERE status = 'overdue'")
-    .get()
+    .prepare<[string, string], { c: number }>(
+      `SELECT COUNT(*) AS c FROM installments
+       WHERE status NOT IN ('paid','waived') AND due_date < ? AND due_date >= ?`
+    )
+    .get(today, badDebtCutoff)
 
   const expensesRow = db
     .prepare<[], { v: number }>('SELECT COALESCE(SUM(amount),0) AS v FROM expenses')
@@ -275,5 +288,136 @@ export function getProfitLoss(
     profit,
     expenses: expensesTotal,
     net: profit - expensesTotal
+  }
+}
+
+const DUE_ROW_SQL = `SELECT
+  i.id AS id,
+  i.sale_id AS sale_id,
+  i.customer_id AS customer_id,
+  c.full_name AS customer_name,
+  c.phone AS customer_phone,
+  s.invoice_number AS invoice_number,
+  i.installment_number AS installment_number,
+  i.due_date AS due_date,
+  i.amount AS amount,
+  i.paid_amount AS paid_amount,
+  (i.amount - i.paid_amount) AS remaining,
+  CAST((julianday(?) - julianday(i.due_date)) AS INTEGER) AS days_overdue
+ FROM installments i
+ JOIN customers c ON c.id = i.customer_id
+ JOIN sales s ON s.id = i.sale_id`
+
+function emptyReport(): InstallmentRangeReport {
+  return { rows: [], total: 0, count: 0 }
+}
+
+function aggregateRows(rows: InstallmentDueRow[]): InstallmentRangeReport {
+  const total = rows.reduce((s, r) => s + r.remaining, 0)
+  return { rows, total: Math.round(total * 100) / 100, count: rows.length }
+}
+
+export function getInstallmentsByRange(
+  token: string | null | undefined,
+  filters: { from: string; to: string }
+): InstallmentRangeReport {
+  requireUser(token)
+  refreshOverdueStatuses()
+  if (!filters.from || !filters.to) return emptyReport()
+  const db = getDb()
+  const today = format(new Date(), 'yyyy-MM-dd')
+  const rows = db
+    .prepare<[string, string, string], InstallmentDueRow>(
+      `${DUE_ROW_SQL}
+       WHERE i.status NOT IN ('paid','waived')
+         AND i.due_date >= ? AND i.due_date <= ?
+       ORDER BY i.due_date ASC, c.full_name ASC`
+    )
+    .all(today, filters.from, filters.to)
+  return aggregateRows(rows)
+}
+
+export function getOverdueInstallments(token: string | null | undefined): InstallmentRangeReport {
+  requireUser(token)
+  refreshOverdueStatuses()
+  const db = getDb()
+  const today = format(new Date(), 'yyyy-MM-dd')
+  const threshold = getBadDebtThresholdDays()
+  const minDays = Math.max(1, getOverdueMinDays())
+  const overdueCutoff = format(subDays(new Date(), minDays), 'yyyy-MM-dd')
+  const badDebtCutoff = format(subDays(new Date(), threshold), 'yyyy-MM-dd')
+  const rows = db
+    .prepare<[string, string, string], InstallmentDueRow>(
+      `${DUE_ROW_SQL}
+       WHERE i.status NOT IN ('paid','waived')
+         AND i.due_date <= ? AND i.due_date > ?
+       ORDER BY i.due_date ASC, c.full_name ASC`
+    )
+    .all(today, overdueCutoff, badDebtCutoff)
+  return aggregateRows(rows)
+}
+
+export function getBadDebtInstallments(token: string | null | undefined): InstallmentRangeReport {
+  requireUser(token)
+  refreshOverdueStatuses()
+  const db = getDb()
+  const today = format(new Date(), 'yyyy-MM-dd')
+  const threshold = getBadDebtThresholdDays()
+  const badDebtCutoff = format(subDays(new Date(), threshold), 'yyyy-MM-dd')
+  const rows = db
+    .prepare<[string, string], InstallmentDueRow>(
+      `${DUE_ROW_SQL}
+       WHERE (i.status = 'waived')
+          OR (i.status NOT IN ('paid','waived') AND i.due_date <= ?)
+       ORDER BY i.due_date ASC, c.full_name ASC`
+    )
+    .all(today, badDebtCutoff)
+  return aggregateRows(rows)
+}
+
+export function getNotificationSummary(token: string | null | undefined): NotificationSummary {
+  requireUser(token)
+  refreshOverdueStatuses()
+  const db = getDb()
+  const today = format(new Date(), 'yyyy-MM-dd')
+  const threshold = getBadDebtThresholdDays()
+  const minDays = Math.max(1, getOverdueMinDays())
+  const overdueCutoff = format(subDays(new Date(), minDays), 'yyyy-MM-dd')
+  const badDebtCutoff = format(subDays(new Date(), threshold), 'yyyy-MM-dd')
+  const inWeek = format(addDays(new Date(), 7), 'yyyy-MM-dd')
+
+  const overdueAgg = db
+    .prepare<[string, string], { c: number; v: number }>(
+      `SELECT COUNT(*) AS c, COALESCE(SUM(amount - paid_amount),0) AS v
+       FROM installments
+       WHERE status NOT IN ('paid','waived') AND due_date <= ? AND due_date > ?`
+    )
+    .get(overdueCutoff, badDebtCutoff)
+
+  const badDebtAgg = db
+    .prepare<[string], { c: number; v: number }>(
+      `SELECT COUNT(*) AS c, COALESCE(SUM(amount - paid_amount),0) AS v
+       FROM installments
+       WHERE (status = 'waived')
+          OR (status NOT IN ('paid','waived') AND due_date <= ?)`
+    )
+    .get(badDebtCutoff)
+
+  const upcomingAgg = db
+    .prepare<[string, string], { c: number; v: number }>(
+      `SELECT COUNT(*) AS c, COALESCE(SUM(amount - paid_amount),0) AS v
+       FROM installments
+       WHERE status NOT IN ('paid','waived') AND due_date >= ? AND due_date <= ?`
+    )
+    .get(today, inWeek)
+
+  return {
+    overdue_count: overdueAgg?.c ?? 0,
+    overdue_total: overdueAgg?.v ?? 0,
+    bad_debt_count: badDebtAgg?.c ?? 0,
+    bad_debt_total: badDebtAgg?.v ?? 0,
+    upcoming_count: upcomingAgg?.c ?? 0,
+    upcoming_total: upcomingAgg?.v ?? 0,
+    overdue_threshold_days: threshold
   }
 }

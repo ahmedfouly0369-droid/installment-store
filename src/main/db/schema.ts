@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS categories (
   name_ar TEXT NOT NULL,
   name_en TEXT NOT NULL,
   icon TEXT,
+  code TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -37,6 +38,7 @@ CREATE TABLE IF NOT EXISTS products (
   name_ar TEXT NOT NULL,
   name_en TEXT NOT NULL,
   model TEXT,
+  code TEXT,
   cost_price REAL NOT NULL DEFAULT 0,
   cash_price REAL NOT NULL DEFAULT 0,
   installment_price REAL NOT NULL DEFAULT 0,
@@ -164,6 +166,7 @@ CREATE TABLE IF NOT EXISTS sales (
   installments_count INTEGER NOT NULL DEFAULT 0,
   installment_amount REAL NOT NULL DEFAULT 0,
   installment_period_days INTEGER NOT NULL DEFAULT 30,
+  installment_period_unit TEXT NOT NULL DEFAULT 'months',
   start_date TEXT NOT NULL DEFAULT (date('now')),
   status TEXT NOT NULL CHECK (status IN ('active','completed','defaulted','cancelled')) DEFAULT 'active',
   notes TEXT,
@@ -182,6 +185,8 @@ CREATE TABLE IF NOT EXISTS sale_items (
   unit_price REAL NOT NULL,
   total_price REAL NOT NULL,
   cost_price REAL NOT NULL DEFAULT 0,
+  profit_mode TEXT,
+  profit_value REAL,
   FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
 );
@@ -274,6 +279,18 @@ CREATE TABLE IF NOT EXISTS backup_log (
 );
 
 INSERT OR IGNORE INTO backup_settings (id) VALUES (1);
+
+CREATE TABLE IF NOT EXISTS app_settings (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  overdue_min_days INTEGER NOT NULL DEFAULT 1,
+  bad_debt_days INTEGER NOT NULL DEFAULT 90,
+  default_profit_mode TEXT NOT NULL DEFAULT 'percent',
+  default_profit_value REAL NOT NULL DEFAULT 30,
+  default_installments_count INTEGER NOT NULL DEFAULT 6,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+INSERT OR IGNORE INTO app_settings (id) VALUES (1);
 
 CREATE INDEX IF NOT EXISTS idx_brands_category ON brands(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);

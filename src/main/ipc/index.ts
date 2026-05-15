@@ -11,6 +11,7 @@ import * as reports from '../services/reports'
 import * as treasury from '../services/treasury'
 import * as expenses from '../services/expenses'
 import * as backup from '../services/backup'
+import * as settings from '../services/settings'
 
 type Handler = (...args: unknown[]) => unknown
 
@@ -324,6 +325,25 @@ export function registerIpc(): void {
     return reports.getProfitLoss(token, days)
   })
   on(IPC.REPORTS.SUPPLIER_BALANCES, (...args) => reports.getSupplierBalances((args as [string])[0]))
+  on(IPC.REPORTS.INSTALLMENTS_BY_RANGE, (...args) => {
+    const [token, filters] = args as [string, { from: string; to: string }]
+    return reports.getInstallmentsByRange(token, filters)
+  })
+  on(IPC.REPORTS.OVERDUE_INSTALLMENTS, (...args) =>
+    reports.getOverdueInstallments((args as [string])[0])
+  )
+  on(IPC.REPORTS.BAD_DEBT_INSTALLMENTS, (...args) =>
+    reports.getBadDebtInstallments((args as [string])[0])
+  )
+  on(IPC.REPORTS.NOTIFICATION_SUMMARY, (...args) =>
+    reports.getNotificationSummary((args as [string])[0])
+  )
+
+  on(IPC.SETTINGS.GET, (...args) => settings.getAppSettings((args as [string])[0]))
+  on(IPC.SETTINGS.UPDATE, (...args) => {
+    const [token, input] = args as [string, Parameters<typeof settings.updateAppSettings>[1]]
+    return settings.updateAppSettings(token, input)
+  })
 
   on(IPC.TREASURY.LIST, (...args) => {
     const [token, filters] = args as [string, Parameters<typeof treasury.listTreasuryEntries>[1]]

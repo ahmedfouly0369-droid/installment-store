@@ -79,7 +79,15 @@ export const IPC = {
     PROFIT_LOSS: 'reports:profit-loss',
     INVENTORY_VALUE: 'reports:inventory-value',
     SUPPLIER_BALANCES: 'reports:supplier-balances',
-    CUSTOMER_BALANCES: 'reports:customer-balances'
+    CUSTOMER_BALANCES: 'reports:customer-balances',
+    INSTALLMENTS_BY_RANGE: 'reports:installments-by-range',
+    OVERDUE_INSTALLMENTS: 'reports:overdue-installments',
+    BAD_DEBT_INSTALLMENTS: 'reports:bad-debt-installments',
+    NOTIFICATION_SUMMARY: 'reports:notification-summary'
+  },
+  SETTINGS: {
+    GET: 'settings:get',
+    UPDATE: 'settings:update'
   },
   TREASURY: {
     LIST: 'treasury:list',

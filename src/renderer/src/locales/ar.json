@@ -58,7 +58,11 @@
     "reports": "التقارير",
     "users": "المستخدمين",
     "notifications": "الإشعارات",
-    "backup": "النسخ الاحتياطي"
+    "backup": "النسخ الاحتياطي",
+    "installments_due": "الأقساط المستحقة",
+    "overdue_installments": "الأقساط المتأخرة",
+    "bad_debts": "الديون المعدومة",
+    "settings": "الإعدادات"
   },
   "theme": {
     "light": "وضع فاتح",
@@ -151,7 +155,8 @@
     "all_categories": "كل الأصناف",
     "all_brands": "كل البراندات",
     "products_count": "عدد المنتجات",
-    "delete_confirm": "هل أنت متأكد من الحذف؟"
+    "delete_confirm": "هل أنت متأكد من الحذف؟",
+    "code": "الكود"
   },
   "products": {
     "title": "المنتجات",
@@ -162,7 +167,8 @@
     "cash_price": "سعر الكاش",
     "installment_price": "سعر التقسيط",
     "description": "الوصف",
-    "stock": "المخزون"
+    "stock": "المخزون",
+    "code": "كود الصنف"
   },
   "warehouses": {
     "title": "المخازن",
@@ -278,7 +284,16 @@
       "paid": "مدفوع",
       "overdue": "متأخر",
       "waived": "معفى"
-    }
+    },
+    "cost_price": "سعر التكلفة",
+    "profit_mode": "طريقة الربح",
+    "profit_value": "قيمة الربح",
+    "profit_mode_percent": "نسبة %",
+    "profit_mode_fixed": "قيمة ثابتة",
+    "period_unit": "وحدة المدة",
+    "period_months": "شهري (نفس اليوم)",
+    "period_days_unit": "بالأيام",
+    "days_overdue": "أيام التأخير"
   },
   "treasury": {
     "title": "الخزينة",
@@ -329,7 +344,54 @@
     "due_today": "مستحق اليوم",
     "days_overdue": "متأخر بـ {{days}} يوم",
     "due_in": "مستحق خلال {{days}} يوم",
-    "go_to_customer": "فتح ملف العميل"
+    "go_to_customer": "فتح ملف العميل",
+    "overdue_total": "إجمالي الأقساط المتأخرة",
+    "bad_debt_total": "إجمالي الديون المعدومة",
+    "upcoming_total": "إجمالي الأقساط القادمة",
+    "view_overdue": "عرض الأقساط المتأخرة",
+    "view_bad_debt": "عرض الديون المعدومة",
+    "view_due": "عرض الأقساط المستحقة",
+    "summary": "ملخص الإشعارات",
+    "threshold_hint": "عتبة المتأخر: {{days}} يوم"
+  },
+  "installments_due": {
+    "title": "الأقساط المستحقة في فترة",
+    "from": "من تاريخ",
+    "to": "إلى تاريخ",
+    "customer": "اسم العميل",
+    "phone": "الهاتف",
+    "invoice": "رقم الفاتورة",
+    "installment_no": "رقم القسط",
+    "due_date": "تاريخ الاستحقاق",
+    "amount": "قيمة القسط",
+    "remaining": "المتبقي",
+    "total": "الإجمالي",
+    "count": "عدد الأقساط",
+    "refresh": "تحديث"
+  },
+  "overdue_page": {
+    "title": "الأقساط المتأخرة",
+    "hint": "الأقساط التي مضى على موعد سدادها بين {{min}} و {{max}} يوم"
+  },
+  "bad_debts": {
+    "title": "الديون المعدومة",
+    "hint": "الأقساط التي مضى على موعد سدادها أكثر من {{days}} يوم (يمكن تعديله من الإعدادات)"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "subtitle": "إعدادات النظام (للمدير فقط)",
+    "thresholds": "عتبات الأقساط",
+    "overdue_min": "بداية اعتبار القسط متأخراً (بالأيام)",
+    "overdue_min_hint": "عدد الأيام بعد تاريخ الاستحقاق ليبدأ القسط في الظهور كمتأخر (افتراضي 1)",
+    "bad_debt_days": "عتبة الديون المعدومة (بالأيام)",
+    "bad_debt_days_hint": "إذا مضى على القسط أكثر من هذا العدد من الأيام يصبح دينا معدوما (افتراضي 90)",
+    "defaults": "القيم الافتراضية للبيع بالتقسيط",
+    "default_profit_mode": "طريقة الربح الافتراضية",
+    "default_profit_value": "قيمة الربح الافتراضية",
+    "default_installments_count": "عدد الأقساط الافتراضي",
+    "save": "حفظ الإعدادات",
+    "saved": "تم حفظ الإعدادات",
+    "admin_only": "الإعدادات متاحة للمدير فقط"
   },
   "import_export": {
     "export_excel": "تصدير Excel",

@@ -5,6 +5,7 @@ import { setLanguage } from '../i18n'
 import { useAuthStore } from '../store/auth'
 import { useThemeStore } from '../store/theme'
 import { call } from '../lib/api'
+import { NotificationBell } from './NotificationBell'
 
 export function Header() {
   const { t, i18n } = useTranslation()
@@ -41,6 +42,7 @@ export function Header() {
         ) : null}
       </div>
       <div className="flex items-center gap-2">
+        {user && <NotificationBell />}
         <button
           className="btn-secondary"
           onClick={toggle}
