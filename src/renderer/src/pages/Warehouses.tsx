@@ -6,12 +6,21 @@ import toast from 'react-hot-toast'
 import { call } from '../lib/api'
 import { Modal } from '../components/ui/Modal'
 import { Field } from '../components/ui/Field'
+import { ImportExportBar } from '../components/ImportExportBar'
 import { useAuthStore } from '../store/auth'
 import { formatNumber } from '../lib/utils'
 import { escapeHtml, openPrintWindow } from '../lib/print'
 import type { InventoryItem, ItemCondition, Product, Warehouse } from '@shared/types'
 
 const CONDITIONS: ItemCondition[] = ['new', 'used', 'returned', 'damaged']
+
+interface InventoryImportRow {
+  warehouse: string | null
+  product: string | null
+  condition: string | null
+  quantity: string | number | null
+  notes: string | null
+}
 
 export function Warehouses() {
   const { t, i18n } = useTranslation()
@@ -196,11 +205,168 @@ export function Warehouses() {
     openPrintWindow(html, t('print_inventory.title'), isAr ? 'rtl' : 'ltr')
   }
 
+  const onImportInventory = async (row: InventoryImportRow) => {
+    if (!row.warehouse || !row.product) {
+      throw new Error(t('import_export.missing_required'))
+    }
+    const whSearch = String(row.warehouse).trim().toLowerCase()
+    const wh = (warehouses.data ?? []).find(
+      w =>
+        w.name_ar.trim().toLowerCase() === whSearch || w.name_en.trim().toLowerCase() === whSearch
+    )
+    if (!wh) {
+      throw new Error(t('import_export.unknown_warehouse', { value: row.warehouse }))
+    }
+    const productSearch = String(row.product).trim().toLowerCase()
+    const product = (products.data ?? []).find(
+      p =>
+        p.name_ar.trim().toLowerCase() === productSearch ||
+        p.name_en.trim().toLowerCase() === productSearch
+    )
+    if (!product) {
+      throw new Error(t('import_export.unknown_brand', { value: row.product }))
+    }
+    const conditionAliases: Record<string, ItemCondition> = {
+      new: 'new',
+      جديد: 'new',
+      used: 'used',
+      مستعمل: 'used',
+      returned: 'returned',
+      مرتجع: 'returned',
+      damaged: 'damaged',
+      تالف: 'damaged'
+    }
+    const rawCond = row.condition ? String(row.condition).trim() : 'new'
+    const condition = conditionAliases[rawCond.toLowerCase()] ?? conditionAliases[rawCond] ?? null
+    if (!condition) {
+      throw new Error(t('import_export.unknown_condition', { value: row.condition }))
+    }
+    const rawQty = row.quantity
+    let delta: number
+    if (rawQty === null || rawQty === undefined || rawQty === '') {
+      delta = 0
+    } else if (typeof rawQty === 'number') {
+      delta = rawQty
+    } else {
+      const n = Number(String(rawQty).replace(/,/g, ''))
+      if (Number.isNaN(n)) {
+        throw new Error(t('import_export.invalid_number', { field: t('warehouses.quantity') }))
+      }
+      delta = n
+    }
+    if (delta <= 0) return
+    await call('warehouses:adjust', {
+      warehouse_id: wh.id,
+      product_id: product.id,
+      condition,
+      delta,
+      notes: row.notes ? String(row.notes) : null
+    })
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold text-slate-900">{t('warehouses.title')}</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+          {t('warehouses.title')}
+        </h1>
         <div className="flex flex-wrap gap-2">
+          <ImportExportBar<InventoryItem, InventoryImportRow>
+            entityName={t('warehouses.inventory')}
+            dir={isAr ? 'rtl' : 'ltr'}
+            filename="warehouse-inventory"
+            rows={inventory.data ?? []}
+            exportColumns={[
+              { key: 'id', header: '#' },
+              {
+                key: 'warehouse',
+                header: t('warehouses.title'),
+                get: (i: InventoryItem) => (isAr ? i.warehouse_name_ar : i.warehouse_name_en) ?? ''
+              },
+              {
+                key: 'product',
+                header: t('sales.product'),
+                get: (i: InventoryItem) => (isAr ? i.product_name_ar : i.product_name_en) ?? ''
+              },
+              {
+                key: 'brand',
+                header: t('categories.brand'),
+                get: (i: InventoryItem) => i.brand_name_ar ?? ''
+              },
+              {
+                key: 'condition',
+                header: t('warehouses.condition'),
+                get: (i: InventoryItem) => t(`warehouses.conditions.${i.condition}`)
+              },
+              { key: 'quantity', header: t('warehouses.quantity') },
+              { key: 'notes', header: t('common.notes') }
+            ]}
+            pdfColumns={[
+              {
+                header: t('warehouses.title'),
+                get: (i: InventoryItem) => (isAr ? i.warehouse_name_ar : i.warehouse_name_en) ?? ''
+              },
+              {
+                header: t('sales.product'),
+                get: (i: InventoryItem) => (isAr ? i.product_name_ar : i.product_name_en) ?? ''
+              },
+              {
+                header: t('categories.brand'),
+                get: (i: InventoryItem) => i.brand_name_ar ?? ''
+              },
+              {
+                header: t('warehouses.condition'),
+                get: (i: InventoryItem) => t(`warehouses.conditions.${i.condition}`)
+              },
+              {
+                header: t('warehouses.quantity'),
+                get: (i: InventoryItem) => formatNumber(i.quantity, locale)
+              }
+            ]}
+            pdfSubtitle={t('app.name')}
+            pdfMeta={{
+              [t('common.total')]: String(
+                (inventory.data ?? []).reduce((acc, i) => acc + i.quantity, 0)
+              )
+            }}
+            importColumns={
+              canAdjust
+                ? [
+                    {
+                      key: 'warehouse',
+                      aliases: [t('warehouses.title'), 'warehouse', 'المخزن'],
+                      required: true
+                    },
+                    {
+                      key: 'product',
+                      aliases: [t('sales.product'), 'product', 'المنتج'],
+                      required: true
+                    },
+                    {
+                      key: 'condition',
+                      aliases: [t('warehouses.condition'), 'condition', 'الحالة']
+                    },
+                    {
+                      key: 'quantity',
+                      aliases: [t('warehouses.quantity'), 'quantity', 'الكمية'],
+                      required: true
+                    },
+                    { key: 'notes', aliases: [t('common.notes'), 'notes', 'ملاحظات'] }
+                  ]
+                : undefined
+            }
+            importTemplateHeaders={[
+              t('warehouses.title'),
+              t('sales.product'),
+              t('warehouses.condition'),
+              t('warehouses.quantity'),
+              t('common.notes')
+            ]}
+            importSampleRow={['المخزن الرئيسي', 'ثلاجة 16 قدم', 'new', 10, '']}
+            onImportRow={onImportInventory}
+            onImportComplete={refresh}
+            canImport={canAdjust}
+          />
           <button className="btn-secondary" onClick={onPrintInventory}>
             <Printer size={16} /> {t('actions.print_inventory')}
           </button>

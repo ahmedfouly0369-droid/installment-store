@@ -329,5 +329,28 @@
     "days_overdue": "{{days}} days overdue",
     "due_in": "Due in {{days}} days",
     "go_to_customer": "Open customer profile"
+  },
+  "import_export": {
+    "export_excel": "Export Excel",
+    "export_pdf": "Export PDF",
+    "import_excel": "Import Excel",
+    "download_template": "Download template",
+    "preview_title": "Import preview - {{name}}",
+    "confirm_import": "Import ({{count}})",
+    "importing": "Importing...",
+    "import_done": "Imported {{count}} rows",
+    "partial_success": "Imported {{ok}}, failed {{fail}}",
+    "empty_file": "The file has no data",
+    "parse_failed": "Failed to parse file",
+    "unmatched_headers": "Unrecognized columns (skipped)",
+    "rows_count": "Rows ready to import: {{count}}",
+    "preview_truncated": "Showing {{shown}} of {{total}} rows",
+    "export_done": "Exported",
+    "missing_required": "Required fields missing",
+    "unknown_category": "Unknown category: {{value}}",
+    "unknown_brand": "Unknown brand: {{value}}",
+    "unknown_warehouse": "Unknown warehouse: {{value}}",
+    "unknown_condition": "Invalid condition: {{value}}",
+    "invalid_number": "Invalid numeric value for {{field}}"
   }
 }
