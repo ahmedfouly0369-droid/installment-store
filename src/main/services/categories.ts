@@ -9,19 +9,19 @@ export function listCategories(token: string | null | undefined): Category[] {
     .prepare<
       [],
       Category
-    >('SELECT id, name_ar, name_en, icon, created_at FROM categories ORDER BY name_ar ASC')
+    >('SELECT id, name_ar, name_en, icon, code, created_at FROM categories ORDER BY name_ar ASC')
     .all()
 }
 
 export function createCategory(
   token: string | null | undefined,
-  data: { name_ar: string; name_en: string; icon?: string | null }
+  data: { name_ar: string; name_en: string; icon?: string | null; code?: string | null }
 ): Category {
   requireRole(token, ['admin'])
   const db = getDb()
   const result = db
-    .prepare('INSERT INTO categories (name_ar, name_en, icon) VALUES (?, ?, ?)')
-    .run(data.name_ar.trim(), data.name_en.trim(), data.icon ?? null)
+    .prepare('INSERT INTO categories (name_ar, name_en, icon, code) VALUES (?, ?, ?, ?)')
+    .run(data.name_ar.trim(), data.name_en.trim(), data.icon ?? null, data.code?.trim() || null)
   return db
     .prepare<[number], Category>('SELECT * FROM categories WHERE id = ?')
     .get(Number(result.lastInsertRowid)) as Category
@@ -30,14 +30,15 @@ export function createCategory(
 export function updateCategory(
   token: string | null | undefined,
   id: number,
-  data: { name_ar: string; name_en: string; icon?: string | null }
+  data: { name_ar: string; name_en: string; icon?: string | null; code?: string | null }
 ): Category {
   requireRole(token, ['admin'])
   const db = getDb()
-  db.prepare('UPDATE categories SET name_ar = ?, name_en = ?, icon = ? WHERE id = ?').run(
+  db.prepare('UPDATE categories SET name_ar = ?, name_en = ?, icon = ?, code = ? WHERE id = ?').run(
     data.name_ar.trim(),
     data.name_en.trim(),
     data.icon ?? null,
+    data.code?.trim() || null,
     id
   )
   return db.prepare<[number], Category>('SELECT * FROM categories WHERE id = ?').get(id) as Category

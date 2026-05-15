@@ -9,16 +9,45 @@ import { Modal } from '../components/ui/Modal'
 import { Field } from '../components/ui/Field'
 import { useAuthStore } from '../store/auth'
 import { formatCurrency, formatDate, todayIso } from '../lib/utils'
-import type { Customer, Product, Sale, SaleType, Warehouse } from '@shared/types'
+import type {
+  AppSettings,
+  Customer,
+  InstallmentPeriodUnit,
+  Product,
+  ProfitMode,
+  Sale,
+  SaleType,
+  Warehouse
+} from '@shared/types'
 
 interface SaleLine {
   product_id: number
   quantity: number
-  unit_price: number
   cost_price: number
+  profit_mode: ProfitMode
+  profit_value: number
+  unit_price: number
 }
 
-const emptyLine = (): SaleLine => ({ product_id: 0, quantity: 1, unit_price: 0, cost_price: 0 })
+const emptyLine = (): SaleLine => ({
+  product_id: 0,
+  quantity: 1,
+  cost_price: 0,
+  profit_mode: 'percent',
+  profit_value: 30,
+  unit_price: 0
+})
+
+function roundCurrency(v: number): number {
+  return Math.round(v * 100) / 100
+}
+
+function computeUnitPrice(costPrice: number, mode: ProfitMode, value: number): number {
+  if (mode === 'percent') {
+    return roundCurrency(costPrice * (1 + (value || 0) / 100))
+  }
+  return roundCurrency(costPrice + (value || 0))
+}
 
 export function Sales() {
   const { t, i18n } = useTranslation()
@@ -32,9 +61,20 @@ export function Sales() {
   const [lines, setLines] = useState<SaleLine[]>([emptyLine()])
   const [downPayment, setDownPayment] = useState(0)
   const [installmentsCount, setInstallmentsCount] = useState(6)
+  const [periodUnit, setPeriodUnit] = useState<InstallmentPeriodUnit>('months')
   const [periodDays, setPeriodDays] = useState(30)
   const [customerId, setCustomerId] = useState<number | ''>('')
   const [confirmingOverdue, setConfirmingOverdue] = useState(false)
+
+  const settings = useQuery({
+    queryKey: ['settings'],
+    queryFn: () => call<AppSettings>('settings:get')
+  })
+
+  useEffect(() => {
+    if (!settings.data) return
+    setInstallmentsCount(prev => (prev === 6 ? settings.data.default_installments_count : prev))
+  }, [settings.data])
 
   const sales = useQuery({
     queryKey: ['sales'],
@@ -82,12 +122,38 @@ export function Sales() {
       updateLine(idx, { product_id: productId })
       return
     }
-    const price = type === 'installment' ? product.installment_price : product.cash_price
+    if (type === 'cash') {
+      updateLine(idx, {
+        product_id: productId,
+        cost_price: product.cost_price,
+        unit_price: product.cash_price,
+        profit_mode: 'fixed',
+        profit_value: roundCurrency(product.cash_price - product.cost_price)
+      })
+      return
+    }
+    const defMode: ProfitMode = settings.data?.default_profit_mode ?? 'percent'
+    const defValue = settings.data?.default_profit_value ?? 30
     updateLine(idx, {
       product_id: productId,
-      unit_price: price,
-      cost_price: product.cost_price
+      cost_price: product.cost_price,
+      profit_mode: defMode,
+      profit_value: defValue,
+      unit_price: computeUnitPrice(product.cost_price, defMode, defValue)
     })
+  }
+
+  const onProfitChange = (idx: number, patch: Partial<SaleLine>) => {
+    setLines(prev =>
+      prev.map((l, i) => {
+        if (i !== idx) return l
+        const next = { ...l, ...patch }
+        if (type === 'installment') {
+          next.unit_price = computeUnitPrice(next.cost_price, next.profit_mode, next.profit_value)
+        }
+        return next
+      })
+    )
   }
 
   useEffect(() => {
@@ -96,17 +162,33 @@ export function Sales() {
         if (l.product_id === 0) return l
         const product = products.data?.find(p => p.id === l.product_id)
         if (!product) return l
-        const price = type === 'installment' ? product.installment_price : product.cash_price
-        return { ...l, unit_price: price }
+        if (type === 'cash') {
+          return {
+            ...l,
+            cost_price: product.cost_price,
+            unit_price: product.cash_price,
+            profit_mode: 'fixed',
+            profit_value: roundCurrency(product.cash_price - product.cost_price)
+          }
+        }
+        return {
+          ...l,
+          cost_price: product.cost_price,
+          unit_price: computeUnitPrice(product.cost_price, l.profit_mode, l.profit_value)
+        }
       })
     )
   }, [type, products.data])
 
   const resetForm = () => {
+    const defMode: ProfitMode = settings.data?.default_profit_mode ?? 'percent'
+    const defValue = settings.data?.default_profit_value ?? 30
+    const defCount = settings.data?.default_installments_count ?? 6
     setType('installment')
-    setLines([emptyLine()])
+    setLines([{ ...emptyLine(), profit_mode: defMode, profit_value: defValue }])
     setDownPayment(0)
-    setInstallmentsCount(6)
+    setInstallmentsCount(defCount)
+    setPeriodUnit('months')
     setPeriodDays(30)
     setCustomerId('')
     setConfirmingOverdue(false)
@@ -147,8 +229,18 @@ export function Sales() {
       down_payment: type === 'cash' ? subtotal : downPayment,
       installments_count: type === 'cash' ? 0 : installmentsCount,
       installment_period_days: type === 'cash' ? 0 : periodDays,
+      installment_period_unit: type === 'cash' ? 'months' : periodUnit,
       notes: (String(fd.get('notes') ?? '') || null) as string | null,
-      items: lines.filter(l => l.product_id > 0 && l.quantity > 0)
+      items: lines
+        .filter(l => l.product_id > 0 && l.quantity > 0)
+        .map(l => ({
+          product_id: l.product_id,
+          quantity: l.quantity,
+          unit_price: l.unit_price,
+          cost_price: l.cost_price,
+          profit_mode: l.profit_mode,
+          profit_value: l.profit_value
+        }))
     }
     if (payload.items.length === 0) {
       toast.error('Add at least one product')
@@ -318,15 +410,27 @@ export function Sales() {
                     onChange={e => setInstallmentsCount(Number(e.target.value))}
                   />
                 </Field>
-                <Field label={t('sales.period_days')}>
-                  <input
+                <Field label={t('sales.period_unit')}>
+                  <select
                     className="input"
-                    type="number"
-                    min={1}
-                    value={periodDays}
-                    onChange={e => setPeriodDays(Number(e.target.value))}
-                  />
+                    value={periodUnit}
+                    onChange={e => setPeriodUnit(e.target.value as InstallmentPeriodUnit)}
+                  >
+                    <option value="months">{t('sales.period_months')}</option>
+                    <option value="days">{t('sales.period_days_unit')}</option>
+                  </select>
                 </Field>
+                {periodUnit === 'days' && (
+                  <Field label={t('sales.period_days')}>
+                    <input
+                      className="input"
+                      type="number"
+                      min={1}
+                      value={periodDays}
+                      onChange={e => setPeriodDays(Number(e.target.value))}
+                    />
+                  </Field>
+                )}
               </>
             )}
             <Field label={t('common.notes')}>
@@ -359,7 +463,14 @@ export function Sales() {
               <thead>
                 <tr>
                   <th>{t('sales.product')}</th>
-                  <th className="w-24">{t('sales.quantity')}</th>
+                  <th className="w-20">{t('sales.quantity')}</th>
+                  <th className="w-32">{t('sales.cost_price')}</th>
+                  {type === 'installment' && (
+                    <>
+                      <th className="w-32">{t('sales.profit_mode')}</th>
+                      <th className="w-28">{t('sales.profit_value')}</th>
+                    </>
+                  )}
                   <th className="w-32">{t('sales.unit_price')}</th>
                   <th className="w-32">{t('sales.total_price')}</th>
                   <th></th>
@@ -397,6 +508,44 @@ export function Sales() {
                         className="input"
                         type="number"
                         step="0.01"
+                        value={l.cost_price}
+                        onChange={e => onProfitChange(idx, { cost_price: Number(e.target.value) })}
+                      />
+                    </td>
+                    {type === 'installment' && (
+                      <>
+                        <td>
+                          <select
+                            className="input"
+                            value={l.profit_mode}
+                            onChange={e =>
+                              onProfitChange(idx, {
+                                profit_mode: e.target.value as ProfitMode
+                              })
+                            }
+                          >
+                            <option value="percent">{t('sales.profit_mode_percent')}</option>
+                            <option value="fixed">{t('sales.profit_mode_fixed')}</option>
+                          </select>
+                        </td>
+                        <td>
+                          <input
+                            className="input"
+                            type="number"
+                            step="0.01"
+                            value={l.profit_value}
+                            onChange={e =>
+                              onProfitChange(idx, { profit_value: Number(e.target.value) })
+                            }
+                          />
+                        </td>
+                      </>
+                    )}
+                    <td>
+                      <input
+                        className="input"
+                        type="number"
+                        step="0.01"
                         value={l.unit_price}
                         onChange={e => updateLine(idx, { unit_price: Number(e.target.value) })}
                       />
@@ -418,7 +567,7 @@ export function Sales() {
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={3} className="text-end font-semibold">
+                  <td colSpan={type === 'installment' ? 5 : 3} className="text-end font-semibold">
                     {t('sales.subtotal')}
                   </td>
                   <td className="font-bold">{formatCurrency(subtotal, locale)}</td>
@@ -427,14 +576,14 @@ export function Sales() {
                 {type === 'installment' && (
                   <>
                     <tr>
-                      <td colSpan={3} className="text-end">
+                      <td colSpan={5} className="text-end">
                         {t('sales.remaining')}
                       </td>
                       <td className="font-semibold">{formatCurrency(remaining, locale)}</td>
                       <td></td>
                     </tr>
                     <tr>
-                      <td colSpan={3} className="text-end">
+                      <td colSpan={5} className="text-end">
                         {t('sales.installment_amount')}
                       </td>
                       <td className="font-semibold">{formatCurrency(installmentAmount, locale)}</td>

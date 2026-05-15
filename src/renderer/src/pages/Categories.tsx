@@ -43,7 +43,8 @@ export function Categories() {
     const fd = new FormData(e.currentTarget)
     const data = {
       name_ar: String(fd.get('name_ar') ?? ''),
-      name_en: String(fd.get('name_en') ?? '')
+      name_en: String(fd.get('name_en') ?? ''),
+      code: (String(fd.get('code') ?? '') || null) as string | null
     }
     try {
       if (catModal.data) {
@@ -125,6 +126,7 @@ export function Categories() {
             <table className="table">
               <thead>
                 <tr>
+                  <th className="w-24">{t('categories.code')}</th>
                   <th>{t('categories.name_ar')}</th>
                   <th>{t('categories.name_en')}</th>
                   {isAdmin && <th className="w-24">{t('common.actions')}</th>}
@@ -133,6 +135,7 @@ export function Categories() {
               <tbody>
                 {(cats.data ?? []).map(c => (
                   <tr key={c.id}>
+                    <td className="font-mono text-xs text-slate-600">{c.code ?? '—'}</td>
                     <td>{c.name_ar}</td>
                     <td>{c.name_en}</td>
                     {isAdmin && (
@@ -237,6 +240,14 @@ export function Categories() {
         title={catModal.data ? t('categories.edit_category') : t('categories.add_category')}
       >
         <form onSubmit={onCatSubmit} className="space-y-3">
+          <Field label={t('categories.code')}>
+            <input
+              className="input"
+              name="code"
+              defaultValue={catModal.data?.code ?? ''}
+              placeholder="CAT-001"
+            />
+          </Field>
           <Field label={t('categories.name_ar')} required>
             <input
               className="input"

@@ -8,6 +8,7 @@ export interface ProductInput {
   name_ar: string
   name_en: string
   model?: string | null
+  code?: string | null
   cost_price: number
   cash_price: number
   installment_price: number
@@ -31,9 +32,9 @@ export function listProducts(
     args.push(filters.brand_id)
   }
   if (filters?.search) {
-    where.push('(p.name_ar LIKE ? OR p.name_en LIKE ? OR p.model LIKE ?)')
+    where.push('(p.name_ar LIKE ? OR p.name_en LIKE ? OR p.model LIKE ? OR p.code LIKE ?)')
     const s = `%${filters.search}%`
-    args.push(s, s, s)
+    args.push(s, s, s, s)
   }
   const sql = `
     SELECT p.*,
@@ -72,8 +73,8 @@ export function createProduct(token: string | null | undefined, data: ProductInp
   const db = getDb()
   const result = db
     .prepare(
-      `INSERT INTO products (category_id, brand_id, name_ar, name_en, model, cost_price, cash_price, installment_price, description)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO products (category_id, brand_id, name_ar, name_en, model, code, cost_price, cash_price, installment_price, description)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       data.category_id,
@@ -81,6 +82,7 @@ export function createProduct(token: string | null | undefined, data: ProductInp
       data.name_ar.trim(),
       data.name_en.trim(),
       data.model ?? null,
+      data.code?.trim() || null,
       data.cost_price,
       data.cash_price,
       data.installment_price,
@@ -97,7 +99,7 @@ export function updateProduct(
   requireRole(token, ['admin', 'accountant'])
   const db = getDb()
   db.prepare(
-    `UPDATE products SET category_id = ?, brand_id = ?, name_ar = ?, name_en = ?, model = ?,
+    `UPDATE products SET category_id = ?, brand_id = ?, name_ar = ?, name_en = ?, model = ?, code = ?,
        cost_price = ?, cash_price = ?, installment_price = ?, description = ?, updated_at = datetime('now')
      WHERE id = ?`
   ).run(
@@ -106,6 +108,7 @@ export function updateProduct(
     data.name_ar.trim(),
     data.name_en.trim(),
     data.model ?? null,
+    data.code?.trim() || null,
     data.cost_price,
     data.cash_price,
     data.installment_price,

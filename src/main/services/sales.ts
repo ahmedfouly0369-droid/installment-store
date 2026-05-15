@@ -1,14 +1,24 @@
-import { addDays, format, parseISO } from 'date-fns'
+import { addDays, addMonths, format, parseISO } from 'date-fns'
 import { getDb } from '../db'
 import { requireRole, requireUser } from './auth'
 import { adjustInventory } from './inventory'
-import type { Installment, Payment, Sale, SaleItem, SaleType } from '@shared/types'
+import type {
+  Installment,
+  InstallmentPeriodUnit,
+  Payment,
+  ProfitMode,
+  Sale,
+  SaleItem,
+  SaleType
+} from '@shared/types'
 
 export interface SaleItemInput {
   product_id: number
   quantity: number
   unit_price: number
   cost_price: number
+  profit_mode?: ProfitMode | null
+  profit_value?: number | null
 }
 
 export interface SaleInput {
@@ -19,8 +29,21 @@ export interface SaleInput {
   down_payment: number
   installments_count: number
   installment_period_days: number
+  installment_period_unit?: InstallmentPeriodUnit
   notes?: string | null
   items: SaleItemInput[]
+}
+
+function computeDueDate(
+  start: Date,
+  n: number,
+  unit: InstallmentPeriodUnit,
+  periodDays: number
+): string {
+  if (unit === 'months') {
+    return format(addMonths(start, n), 'yyyy-MM-dd')
+  }
+  return format(addDays(start, n * periodDays), 'yyyy-MM-dd')
 }
 
 function generateInvoiceNumber(): string {
@@ -43,6 +66,7 @@ export function createSale(token: string | null | undefined, data: SaleInput): S
   const installmentsCount = data.type === 'cash' ? 0 : data.installments_count
   const installmentAmount =
     installmentsCount > 0 ? Math.round((remaining / installmentsCount) * 100) / 100 : 0
+  const periodUnit: InstallmentPeriodUnit = data.installment_period_unit ?? 'months'
   const invoiceNumber = generateInvoiceNumber()
 
   const saleId = db.transaction(() => {
@@ -50,8 +74,9 @@ export function createSale(token: string | null | undefined, data: SaleInput): S
       .prepare(
         `INSERT INTO sales
           (customer_id, warehouse_id, invoice_number, type, total_amount, down_payment, remaining_amount,
-           installments_count, installment_amount, installment_period_days, start_date, status, notes, created_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+           installments_count, installment_amount, installment_period_days, installment_period_unit,
+           start_date, status, notes, created_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         data.customer_id,
@@ -64,6 +89,7 @@ export function createSale(token: string | null | undefined, data: SaleInput): S
         installmentsCount,
         installmentAmount,
         data.installment_period_days,
+        periodUnit,
         data.start_date,
         data.type === 'cash' ? 'completed' : 'active',
         data.notes ?? null,
@@ -71,7 +97,9 @@ export function createSale(token: string | null | undefined, data: SaleInput): S
       )
     const sid = Number(result.lastInsertRowid)
     const insItem = db.prepare(
-      'INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, total_price, cost_price) VALUES (?, ?, ?, ?, ?, ?)'
+      `INSERT INTO sale_items
+        (sale_id, product_id, quantity, unit_price, total_price, cost_price, profit_mode, profit_value)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
     for (const item of data.items) {
       insItem.run(
@@ -80,7 +108,9 @@ export function createSale(token: string | null | undefined, data: SaleInput): S
         item.quantity,
         item.unit_price,
         item.quantity * item.unit_price,
-        item.cost_price
+        item.cost_price,
+        item.profit_mode ?? null,
+        item.profit_value ?? null
       )
       adjustInventory(db, data.warehouse_id, item.product_id, 'new', -item.quantity)
     }
@@ -93,7 +123,7 @@ export function createSale(token: string | null | undefined, data: SaleInput): S
       )
       let allocated = 0
       for (let n = 1; n <= installmentsCount; n++) {
-        const dueDate = format(addDays(startDate, n * data.installment_period_days), 'yyyy-MM-dd')
+        const dueDate = computeDueDate(startDate, n, periodUnit, data.installment_period_days)
         const amount =
           n === installmentsCount
             ? Math.round((remaining - allocated) * 100) / 100

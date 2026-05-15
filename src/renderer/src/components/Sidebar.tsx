@@ -12,7 +12,11 @@ import {
   Bell,
   UserCog,
   Receipt,
-  DatabaseBackup
+  DatabaseBackup,
+  CalendarClock,
+  AlertTriangle,
+  ShieldAlert,
+  Settings
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../store/auth'
@@ -33,6 +37,24 @@ const items = [
   { to: '/sales', key: 'sales', icon: ShoppingCart, roles: ['admin', 'accountant', 'sales'] },
   { to: '/treasury', key: 'treasury', icon: Wallet, roles: ['admin', 'accountant'] },
   { to: '/expenses', key: 'expenses', icon: Receipt, roles: ['admin', 'accountant'] },
+  {
+    to: '/installments-due',
+    key: 'installments_due',
+    icon: CalendarClock,
+    roles: ['admin', 'accountant', 'sales']
+  },
+  {
+    to: '/overdue',
+    key: 'overdue_installments',
+    icon: AlertTriangle,
+    roles: ['admin', 'accountant', 'sales']
+  },
+  {
+    to: '/bad-debts',
+    key: 'bad_debts',
+    icon: ShieldAlert,
+    roles: ['admin', 'accountant']
+  },
   { to: '/reports', key: 'reports', icon: BarChart3, roles: ['admin', 'accountant'] },
   {
     to: '/notifications',
@@ -41,6 +63,7 @@ const items = [
     roles: ['admin', 'accountant', 'sales']
   },
   { to: '/users', key: 'users', icon: UserCog, roles: ['admin'] },
+  { to: '/settings', key: 'settings', icon: Settings, roles: ['admin', 'accountant', 'sales'] },
   { to: '/backup', key: 'backup', icon: DatabaseBackup, roles: ['admin', 'accountant'] }
 ]
 

@@ -19,6 +19,7 @@ export interface Category {
   name_ar: string
   name_en: string
   icon: string | null
+  code: string | null
   created_at: string
 }
 
@@ -39,6 +40,7 @@ export interface Product {
   name_ar: string
   name_en: string
   model: string | null
+  code: string | null
   cost_price: number
   cash_price: number
   installment_price: number
@@ -179,6 +181,8 @@ export interface Customer {
 
 export type SaleStatus = 'active' | 'completed' | 'defaulted' | 'cancelled'
 export type SaleType = 'cash' | 'installment'
+export type InstallmentPeriodUnit = 'months' | 'days'
+export type ProfitMode = 'percent' | 'fixed'
 
 export interface Sale {
   id: number
@@ -192,6 +196,7 @@ export interface Sale {
   installments_count: number
   installment_amount: number
   installment_period_days: number
+  installment_period_unit: InstallmentPeriodUnit
   start_date: string
   status: SaleStatus
   notes: string | null
@@ -209,6 +214,8 @@ export interface SaleItem {
   unit_price: number
   total_price: number
   cost_price: number
+  profit_mode: ProfitMode | null
+  profit_value: number | null
   product_name_ar?: string
   product_name_en?: string
 }
@@ -363,4 +370,53 @@ export interface BackupLogEntry {
 
 export interface BackupResult {
   log: BackupLogEntry
+}
+
+export interface AppSettings {
+  id: number
+  overdue_min_days: number
+  bad_debt_days: number
+  default_profit_mode: ProfitMode
+  default_profit_value: number
+  default_installments_count: number
+  updated_at: string
+}
+
+export interface AppSettingsInput {
+  overdue_min_days: number
+  bad_debt_days: number
+  default_profit_mode: ProfitMode
+  default_profit_value: number
+  default_installments_count: number
+}
+
+export interface InstallmentDueRow {
+  id: number
+  sale_id: number
+  customer_id: number
+  customer_name: string
+  customer_phone: string
+  invoice_number: string
+  installment_number: number
+  due_date: string
+  amount: number
+  paid_amount: number
+  remaining: number
+  days_overdue: number
+}
+
+export interface InstallmentRangeReport {
+  rows: InstallmentDueRow[]
+  total: number
+  count: number
+}
+
+export interface NotificationSummary {
+  overdue_count: number
+  overdue_total: number
+  bad_debt_count: number
+  bad_debt_total: number
+  upcoming_count: number
+  upcoming_total: number
+  overdue_threshold_days: number
 }

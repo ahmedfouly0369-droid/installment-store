@@ -18,6 +18,10 @@ import { Reports } from './pages/Reports'
 import { Notifications } from './pages/Notifications'
 import { Users } from './pages/Users'
 import { Backup } from './pages/Backup'
+import { InstallmentsDue } from './pages/InstallmentsDue'
+import { OverdueInstallments } from './pages/OverdueInstallments'
+import { BadDebts } from './pages/BadDebts'
+import { Settings } from './pages/Settings'
 
 export default function App() {
   return (
@@ -80,6 +84,10 @@ export default function App() {
           }
         />
         <Route path="notifications" element={<Notifications />} />
+        <Route path="installments-due" element={<InstallmentsDue />} />
+        <Route path="overdue" element={<OverdueInstallments />} />
+        <Route path="bad-debts" element={<BadDebts />} />
+        <Route path="settings" element={<Settings />} />
         <Route
           path="users"
           element={
