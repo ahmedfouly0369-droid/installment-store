@@ -83,7 +83,8 @@ export const IPC = {
     INSTALLMENTS_BY_RANGE: 'reports:installments-by-range',
     OVERDUE_INSTALLMENTS: 'reports:overdue-installments',
     BAD_DEBT_INSTALLMENTS: 'reports:bad-debt-installments',
-    NOTIFICATION_SUMMARY: 'reports:notification-summary'
+    NOTIFICATION_SUMMARY: 'reports:notification-summary',
+    PRODUCT_STATS: 'reports:product-stats'
   },
   SETTINGS: {
     GET: 'settings:get',

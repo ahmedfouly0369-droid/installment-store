@@ -62,6 +62,7 @@
     "installments_due": "الأقساط المستحقة",
     "overdue_installments": "الأقساط المتأخرة",
     "bad_debts": "الديون المعدومة",
+    "product_stats": "إحصائيات السلع",
     "settings": "الإعدادات"
   },
   "theme": {
@@ -465,5 +466,37 @@
     "never": "—",
     "cloud_note": "للحفظ السحابي: اختر مجلد متزامن مع OneDrive أو Google Drive كمكان للنسخ الاحتياطي.",
     "admin_only": "إعدادات النسخ الاحتياطي متاحة للمدير فقط"
+  },
+  "product_stats": {
+    "title": "إحصائيات السلع",
+    "subtitle": "أداء المبيعات والمرتجعات وركود البضاعة",
+    "filters": "الفلاتر",
+    "from": "من تاريخ",
+    "to": "إلى تاريخ",
+    "category": "الصنف",
+    "all_categories": "كل الأصناف",
+    "limit": "عدد العناصر",
+    "refresh": "تحديث",
+    "tab_most_sold": "الأكثر مبيعاً",
+    "tab_least_sold": "الأقل مبيعاً",
+    "tab_most_returned": "الأكثر مرتجعاً",
+    "tab_slow_moving": "السلع الراكدة",
+    "card_most_sold": "السلعة الأكثر مبيعاً",
+    "card_least_sold": "السلعة الأقل مبيعاً",
+    "card_most_returned": "السلعة الأكثر مرتجعاً",
+    "qty_sold": "الكمية المباعة",
+    "qty_returned": "الكمية المرتجعة",
+    "brand": "البراند",
+    "code": "كود السلعة",
+    "no_data": "لا توجد بيانات في هذا النطاق",
+    "chart_title": "ترتيب السلع حسب المبيعات",
+    "chart_range": "النطاق: {{from}} → {{to}}",
+    "details_title": "تفاصيل الأداء",
+    "stock_qty": "المخزون",
+    "last_sold": "آخر بيعة",
+    "days_since_sold": "عدد الأيام منذ آخر بيعة",
+    "revenue": "الإيرادات",
+    "open_details": "عرض التقرير التفصيلي",
+    "never_sold": "لم تُبع"
   }
 }

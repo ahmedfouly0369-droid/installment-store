@@ -33,8 +33,9 @@ export function seedDatabase(db: Database.Database): void {
   const insertUser = db.prepare(
     `INSERT INTO users (username, password_hash, full_name, role) VALUES (?, ?, ?, ?)`
   )
-  const adminHash = bcrypt.hashSync('admin123', 10)
-  insertUser.run('admin', adminHash, 'Administrator', 'admin')
+  insertUser.run('admin', bcrypt.hashSync('admin123', 10), 'Administrator', 'admin')
+  insertUser.run('Cashier', bcrypt.hashSync('cashier123', 10), 'Cashier', 'sales')
+  insertUser.run('account', bcrypt.hashSync('account123', 10), 'Accountant', 'accountant')
 
   const insertCategory = db.prepare(
     `INSERT INTO categories (name_ar, name_en, icon) VALUES (?, ?, ?)`

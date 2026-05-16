@@ -420,3 +420,47 @@ export interface NotificationSummary {
   upcoming_total: number
   overdue_threshold_days: number
 }
+
+export interface ProductStatBase {
+  product_id: number
+  product_name_ar: string
+  product_name_en: string
+  code: string | null
+  brand_id: number
+  brand_name_ar: string
+  brand_name_en: string
+  category_id: number
+  category_name_ar: string
+  category_name_en: string
+}
+
+export interface ProductSalesStat extends ProductStatBase {
+  total_sold: number
+  total_revenue: number
+}
+
+export interface ProductReturnStat extends ProductStatBase {
+  total_returned: number
+}
+
+export interface ProductStockStat extends ProductStatBase {
+  stock_qty: number
+  total_sold: number
+  last_sold_at: string | null
+  days_since_sold: number | null
+}
+
+export interface ProductStatsFilters {
+  from: string
+  to: string
+  category_id?: number | null
+  limit?: number
+}
+
+export interface ProductStatsReport {
+  filters: { from: string; to: string; category_id: number | null }
+  most_sold: ProductSalesStat[]
+  least_sold: ProductSalesStat[]
+  most_returned: ProductReturnStat[]
+  slow_moving: ProductStockStat[]
+}

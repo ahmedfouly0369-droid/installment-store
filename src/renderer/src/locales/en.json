@@ -62,6 +62,7 @@
     "installments_due": "Installments Due",
     "overdue_installments": "Overdue Installments",
     "bad_debts": "Bad Debts",
+    "product_stats": "Product Statistics",
     "settings": "Settings"
   },
   "theme": {
@@ -465,5 +466,37 @@
     "never": "—",
     "cloud_note": "For cloud backup: choose a folder synced with OneDrive or Google Drive.",
     "admin_only": "Backup settings are available to admins only"
+  },
+  "product_stats": {
+    "title": "Product Statistics",
+    "subtitle": "Sales performance, returns, and slow-moving inventory",
+    "filters": "Filters",
+    "from": "From",
+    "to": "To",
+    "category": "Category",
+    "all_categories": "All categories",
+    "limit": "Limit",
+    "refresh": "Refresh",
+    "tab_most_sold": "Most sold",
+    "tab_least_sold": "Least sold",
+    "tab_most_returned": "Most returned",
+    "tab_slow_moving": "Slow moving",
+    "card_most_sold": "Most sold product",
+    "card_least_sold": "Least sold product",
+    "card_most_returned": "Most returned product",
+    "qty_sold": "Qty sold",
+    "qty_returned": "Qty returned",
+    "brand": "Brand",
+    "code": "Product code",
+    "no_data": "No data in this range",
+    "chart_title": "Products ranked by sales",
+    "chart_range": "Range: {{from}} → {{to}}",
+    "details_title": "Performance details",
+    "stock_qty": "Stock",
+    "last_sold": "Last sold",
+    "days_since_sold": "Days since last sale",
+    "revenue": "Revenue",
+    "open_details": "View detailed report",
+    "never_sold": "Never sold"
   }
 }

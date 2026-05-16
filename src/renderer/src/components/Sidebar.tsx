@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   Wallet,
   BarChart3,
+  PieChart,
   Bell,
   UserCog,
   Receipt,
@@ -56,6 +57,12 @@ const items = [
     roles: ['admin', 'accountant']
   },
   { to: '/reports', key: 'reports', icon: BarChart3, roles: ['admin', 'accountant'] },
+  {
+    to: '/product-stats',
+    key: 'product_stats',
+    icon: PieChart,
+    roles: ['admin', 'accountant', 'sales']
+  },
   {
     to: '/notifications',
     key: 'notifications',

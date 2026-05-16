@@ -2,6 +2,7 @@ import Database from 'better-sqlite3'
 import { app } from 'electron'
 import path from 'node:path'
 import { mkdirSync } from 'node:fs'
+import bcrypt from 'bcryptjs'
 import { SCHEMA_SQL } from './schema'
 import { seedDatabase } from './seed'
 
@@ -33,6 +34,20 @@ function runMigrations(db: Database.Database): void {
   }
   if (!columnExists(db, 'sale_items', 'profit_value')) {
     db.exec('ALTER TABLE sale_items ADD COLUMN profit_value REAL')
+  }
+  ensureDefaultUsers(db)
+}
+
+function ensureDefaultUsers(db: Database.Database): void {
+  const insertUser = db.prepare(
+    `INSERT INTO users (username, password_hash, full_name, role) VALUES (?, ?, ?, ?)`
+  )
+  const findUser = db.prepare<[string], { id: number }>('SELECT id FROM users WHERE username = ?')
+  if (!findUser.get('Cashier')) {
+    insertUser.run('Cashier', bcrypt.hashSync('cashier123', 10), 'Cashier', 'sales')
+  }
+  if (!findUser.get('account')) {
+    insertUser.run('account', bcrypt.hashSync('account123', 10), 'Accountant', 'accountant')
   }
 }
 

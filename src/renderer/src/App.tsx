@@ -22,6 +22,7 @@ import { InstallmentsDue } from './pages/InstallmentsDue'
 import { OverdueInstallments } from './pages/OverdueInstallments'
 import { BadDebts } from './pages/BadDebts'
 import { Settings } from './pages/Settings'
+import { ProductStats } from './pages/ProductStats'
 
 export default function App() {
   return (
@@ -87,6 +88,7 @@ export default function App() {
         <Route path="installments-due" element={<InstallmentsDue />} />
         <Route path="overdue" element={<OverdueInstallments />} />
         <Route path="bad-debts" element={<BadDebts />} />
+        <Route path="product-stats" element={<ProductStats />} />
         <Route path="settings" element={<Settings />} />
         <Route
           path="users"

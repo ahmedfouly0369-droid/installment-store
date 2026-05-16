@@ -76,7 +76,6 @@ export function Login() {
               {loading ? t('common.loading') : t('auth.sign_in')}
             </button>
           </form>
-          <p className="text-center text-xs text-slate-500">{t('auth.default_credentials')}</p>
         </div>
       </div>
     </div>

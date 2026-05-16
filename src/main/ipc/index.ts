@@ -8,6 +8,7 @@ import * as suppliers from '../services/suppliers'
 import * as customers from '../services/customers'
 import * as sales from '../services/sales'
 import * as reports from '../services/reports'
+import * as productStats from '../services/product-stats'
 import * as treasury from '../services/treasury'
 import * as expenses from '../services/expenses'
 import * as backup from '../services/backup'
@@ -338,6 +339,13 @@ export function registerIpc(): void {
   on(IPC.REPORTS.NOTIFICATION_SUMMARY, (...args) =>
     reports.getNotificationSummary((args as [string])[0])
   )
+  on(IPC.REPORTS.PRODUCT_STATS, (...args) => {
+    const [token, filters] = args as [
+      string,
+      { from: string; to: string; category_id?: number | null; limit?: number }
+    ]
+    return productStats.getProductStatsReport(token, filters)
+  })
 
   on(IPC.SETTINGS.GET, (...args) => settings.getAppSettings((args as [string])[0]))
   on(IPC.SETTINGS.UPDATE, (...args) => {
